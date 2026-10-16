@@ -27,7 +27,11 @@ jobs:
       - name: Generate heatmap
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run: python update_heatmap.py
+      - name: Generate heatmap
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_ARCHIVE_DATABASE_ID: ${{ secrets.NOTION_ARCHIVE_DATABASE_ID }}
+        run: python update_heatmap.py run: python update_heatmap.py
 
       - name: Commit updated heatmap
         run: |
