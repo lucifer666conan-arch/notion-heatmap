@@ -170,8 +170,9 @@ def write_heatmap_png(year, month, category, filename):
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="PNG")
 
+d
 def screenshot_html(html_file, png_file):
-    """使用 Chromium 将现有 HTML 热力图截成 PNG。"""
+    """使用浏览器截图，并裁掉热力图下方的多余空白。"""
     html_path = Path(html_file).resolve()
     png_path = Path(png_file)
     png_path.parent.mkdir(parents=True, exist_ok=True)
@@ -183,8 +184,29 @@ def screenshot_html(html_file, png_file):
             device_scale_factor=2,
         )
         page.goto(html_path.as_uri(), wait_until="networkidle")
-        page.screenshot(path=str(png_path), full_page=True)
+        page.evaluate("document.fonts.ready")
+
+        # 截图高度根据网页实际内容计算
+        dimensions = page.evaluate("""() => {
+            const body = document.body;
+            const root = document.documentElement;
+            return {
+                width: Math.max(body.scrollWidth, root.scrollWidth),
+                height: Math.max(body.scrollHeight, root.scrollHeight)
+            };
+        }""")
+
+        page.set_viewport_size({
+            "width": min(max(dimensions["width"], 800), 3000),
+            "height": min(max(dimensions["height"], 300), 3000),
+        })
+
+        page.screenshot(
+            path=str(png_path),
+            full_page=True,
+        )
         browser.close()
+
 
 def upload_png_to_notion(image_path):
     """将 PNG 图片上传到 Notion，返回上传文件 ID。"""
