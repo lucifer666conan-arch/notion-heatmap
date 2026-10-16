@@ -113,19 +113,27 @@ def make_month(year, month, category):
     section = f'<section class="panel"><h2>{html.escape(category)} · {year}年{month}月</h2><div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="month-grid">{"".join(cells)}</div><p class="month-summary">本月打卡：{total} 次</p></section>'
     return f'<h1>{html.escape(category)}打卡热力图</h1><div class="summary">{year}年{month}月历史记录；悬停方格可查看当天详情。</div>{section}'
 
+
 def get_archive_records():
     records = []
+    database = notion.databases.retrieve(database_id=ARCHIVE_DATABASE_ID)
+    data_sources = database.get("data_sources", [])
+    if not data_sources:
+        raise SystemExit("历史热力图档案数据库中没有找到数据源")
+    archive_data_source_id = data_sources[0]["id"]
+
     cursor = None
     while True:
-        args = {"database_id": ARCHIVE_DATABASE_ID, "page_size": 100}
+        args = {"data_source_id": archive_data_source_id, "page_size": 100}
         if cursor:
             args["start_cursor"] = cursor
-        result = notion.databases.query(**args)
+        result = notion.data_sources.query(**args)
         records.extend(result.get("results", []))
         if not result.get("has_more"):
             break
         cursor = result.get("next_cursor")
     return records
+
 
 def prop_value(page, name):
     p = page.get("properties", {}).get(name, {})
@@ -153,7 +161,7 @@ def set_archive_record(record_map, title, kind, year, month, urls):
     if existing:
         notion.pages.update(page_id=existing["id"], properties=properties)
     else:
-        notion.pages.create(parent={"database_id": ARCHIVE_DATABASE_ID}, properties=properties)
+        notion.pages.create(parent={"data_source_id": notion.databases.retrieve(database_id=ARCHIVE_DATABASE_ID)["data_sources"][0]["id"]}, properties=properties)
 
 # Collect existing records so reruns don't create duplicates.
 record_map = {}
