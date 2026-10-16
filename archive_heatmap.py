@@ -186,6 +186,44 @@ def screenshot_html(html_file, png_file):
         page.screenshot(path=str(png_path), full_page=True)
         browser.close()
 
+def upload_png_to_notion(image_path):
+    """将 PNG 图片上传到 Notion，返回上传文件 ID。"""
+    token = os.environ["NOTION_TOKEN"]
+    path = Path(image_path)
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Notion-Version": "2026-03-11",
+    }
+
+    # 第一步：创建文件上传任务
+    response = requests.post(
+        "https://api.notion.com/v1/file_uploads",
+        headers=headers,
+        json={
+            "filename": path.name,
+            "content_type": "image/png",
+        },
+        timeout=60,
+    )
+    response.raise_for_status()
+    upload_id = response.json()["id"]
+
+    # 第二步：上传图片内容
+    with path.open("rb") as image_file:
+        response = requests.post(
+            f"https://api.notion.com/v1/file_uploads/{upload_id}/send",
+            headers=headers,
+            files={
+                "file": (path.name, image_file, "image/png"),
+            },
+            timeout=120,
+        )
+    response.raise_for_status()
+
+    print(f"PNG uploaded to Notion: {path.name}")
+    return upload_id
+
 def write_page(title, body, filename):
     document = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{html.escape(title)}</title><style>{STYLE}</style></head><body>{body}<footer>历史热力图档案 · 按归档时的 Notion 打卡数据生成</footer></body></html>'''
     path = Path(filename)
