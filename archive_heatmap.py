@@ -24,7 +24,9 @@ def get_archive_data_source_id():
             sources = database.get("data_sources", [])
             if sources:
                 return sources[0]["id"]
-    raise SystemExit("没有在历史热力图档案页面中找到数据库数据源")TOKEN = os.environ.get("NOTION_TOKEN")
+   raise SystemExit("没有在历史热力图档案页面中找到数据库数据源")
+
+TOKEN = os.environ.get("NOTION_TOKEN")
 BASE_URL = "https://lucifer666conan-arch.github.io/notion-heatmap"
 CATEGORIES = ["书籍", "影视", "游戏", "做饭", "厨具"]
 CATEGORY_PATHS = {"书籍": "books", "影视": "media", "游戏": "games", "做饭": "cooking", "厨具": "kitchenware"}
