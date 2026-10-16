@@ -171,8 +171,9 @@ def write_heatmap_png(year, month, category, filename):
     image.save(path, format="PNG")
 
 
+
 def screenshot_html(html_file, png_file):
-    """使用浏览器截图，并裁掉热力图下方的多余空白。"""
+    """截图热力图，自动裁掉上下及左右多余空白。"""
     html_path = Path(html_file).resolve()
     png_path = Path(png_file)
     png_path.parent.mkdir(parents=True, exist_ok=True)
@@ -180,33 +181,58 @@ def screenshot_html(html_file, png_file):
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(
-            viewport={"width": 1600, "height": 1000},
+            viewport={"width": 3000, "height": 1000},
             device_scale_factor=2,
         )
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
-        # 只截取标题、说明、热力图面板，不包含底部 footer
         dimensions = page.evaluate("""() => {
-            const content = document.querySelector('body > h1');
+            const title = document.querySelector('body > h1');
             const summary = document.querySelector('body > .summary');
-            const panel = document.querySelector('body > .panel');
-            const section = document.querySelector('body > section.panel');
+            const panel = document.querySelector('body > section.panel');
 
-            const targets = [content, summary, panel, section].filter(Boolean);
-            if (!targets.length) {
+            if (!panel) {
                 return {
                     width: document.documentElement.scrollWidth,
                     height: document.documentElement.scrollHeight
                 };
             }
 
-            const rects = targets.map(el => el.getBoundingClientRect());
-            const right = Math.max(...rects.map(r => r.right));
-            const bottom = Math.max(...rects.map(r => r.bottom));
+            const panelRect = panel.getBoundingClientRect();
+            const titleRect = title
+                ? title.getBoundingClientRect()
+                : panelRect;
+            const summaryRect = summary
+                ? summary.getBoundingClientRect()
+                : panelRect;
+
+            const content = panel.querySelector('.scroll');
+            const legend = panel.querySelector('.legend');
+            const contentRect = content
+                ? content.getBoundingClientRect()
+                : panelRect;
+            const legendRect = legend
+                ? legend.getBoundingClientRect()
+                : panelRect;
+
+            // 横向：保留标题、说明、完整热力图和图例
+            const right = Math.max(
+                titleRect.right,
+                summaryRect.right,
+                contentRect.left + (content ? content.scrollWidth : 0),
+                legendRect.right
+            );
+
+            // 纵向：沿用之前成功的方式，保留标题、说明和整个面板
+            const bottom = Math.max(
+                panelRect.bottom,
+                titleRect.bottom,
+                summaryRect.bottom
+            );
 
             return {
-                width: Math.ceil(right + 20),
+                width: Math.ceil(right + 24),
                 height: Math.ceil(bottom + 24)
             };
         }""")
@@ -221,6 +247,7 @@ def screenshot_html(html_file, png_file):
             full_page=False,
         )
         browser.close()
+
 
 
 def upload_png_to_notion(image_path):
