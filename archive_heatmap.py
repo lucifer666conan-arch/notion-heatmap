@@ -131,12 +131,10 @@ def make_month(year, month, category):
 
 def get_archive_records():
     records = []
-    database = notion.databases.retrieve(database_id=ARCHIVE_DATABASE_ID)
+    archive_data_source_id = get_archive_data_source_id()
     data_sources = database.get("data_sources", [])
     if not data_sources:
         raise SystemExit("历史热力图档案数据库中没有找到数据源")
-    archive_data_source_id = data_sources[0]["id"]
-
     cursor = None
     while True:
         args = {"data_source_id": archive_data_source_id, "page_size": 100}
@@ -176,7 +174,7 @@ def set_archive_record(record_map, title, kind, year, month, urls):
     if existing:
         notion.pages.update(page_id=existing["id"], properties=properties)
     else:
-        notion.pages.create(parent={"data_source_id": notion.databases.retrieve(database_id=ARCHIVE_DATABASE_ID)["data_sources"][0]["id"]}, properties=properties)
+       notion.pages.create(parent={"data_source_id": get_archive_data_source_id()}, properties=properties) notion.databases.retrieve(database_id=ARCHIVE_DATABASE_ID)["data_sources"][0]["id"]}, properties=properties)
 
 # Collect existing records so reruns don't create duplicates.
 record_map = {}
