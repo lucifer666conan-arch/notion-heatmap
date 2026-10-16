@@ -1,3 +1,4 @@
 notion-client
 Pillow
 playwright
+requests
