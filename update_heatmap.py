@@ -65,7 +65,7 @@ except Exception as e:
 first_day = date(YEAR, 1, 1)
 last_day = date(YEAR, 12, 31)
 grid_start = first_day - timedelta(days=(first_day.weekday() + 1) % 7)
-grid_end = last_day + timedelta(days=(5 - last_day.weekday()) % 7 + 1)
+grid_end = last_day + timedelta(days=(5 - last_day.weekday()) % 7)
 all_dates = []
 current = grid_start
 while current <= grid_end:
@@ -104,7 +104,7 @@ def make_year_heatmap():
     return f'''<section class="panel year-panel">
       <h2>{YEAR} 年总打卡 · 全年</h2>
       <div class="scroll year-scroll">
-        <div class="month-labels" style="grid-template-columns:repeat({week_count},16px)">{''.join(month_labels)}</div>
+        <div class="month-labels" style="grid-template-columns:repeat({week_count},13px)">{''.join(month_labels)}</div>
         <div class="heatmap year-heatmap" style="grid-template-columns:repeat({week_count},13px)">{''.join(cells)}</div>
       </div>
       <p class="legend">少 ← {legend} → 多</p>
