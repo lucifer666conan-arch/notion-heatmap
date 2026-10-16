@@ -170,7 +170,6 @@ def write_heatmap_png(year, month, category, filename):
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="PNG")
 
-d
 def screenshot_html(html_file, png_file):
     """使用浏览器截图，并裁掉热力图下方的多余空白。"""
     html_path = Path(html_file).resolve()
