@@ -373,8 +373,17 @@ for year in sorted(years):
     if not year_record_exists or year == TODAY.year:
         write_page(f"{year} 年总打卡热力图（历史档案）", make_year(year), f"{year_dir}/index.html")
         screenshot_html(f"{year_dir}/index.html", f"{year_dir}/heatmap.png")
-    set_archive_record(record_map, f"{year}年总热力图", "年度", year, None,
-                       {"总热力图": f"{BASE_URL}/{year_dir}/"})
+    
+    set_archive_record(
+        record_map,
+        f"{year}年总热力图",
+        "年度",
+        year,
+        None,
+        {"总热力图": f"{BASE_URL}/{year_dir}/"},
+        preview_file=f"{year_dir}/heatmap.png" if year == TODAY.year else None,
+    )
+
     months = {date.fromisoformat(d).month for d in daily if date.fromisoformat(d).year == year}
     if year == TODAY.year:
         months.add(TODAY.month)
