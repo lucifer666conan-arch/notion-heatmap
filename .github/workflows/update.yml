@@ -27,7 +27,6 @@ jobs:
       - name: Generate heatmap
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-          NOTION_ARCHIVE_DATABASE_ID: ${{ secrets.NOTION_ARCHIVE_DATABASE_ID }}
         run: python update_heatmap.py
 
       - name: Archive historical heatmaps
