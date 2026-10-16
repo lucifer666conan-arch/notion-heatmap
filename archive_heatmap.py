@@ -78,35 +78,62 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{colo
 .month-day{position:relative;aspect-ratio:1;min-width:0;border-radius:5px;border:1px solid rgba(27,31,36,.06);display:flex;align-items:center;justify-content:center}
 .day-number{font-size:11px;color:#24292f;opacity:.85}.month-summary{font-size:12px;color:#57606a;margin:12px 0 0}footer{color:#57606a;font-size:12px;margin-top:18px}
 """
+
 def write_heatmap_png(year, month, category, filename):
-    """生成历史热力图 PNG 预览。month 为 None 时生成全年总打卡图。"""
-    cell = 18
-    gap = 4
+    """生成与实时网页布局接近的历史热力图 PNG。"""
+    cell = 13
+    gap = 3
     margin = 24
-    label_width = 42
+    label_width = 38
+    top_height = 48
 
     if month is None:
         first = date(year, 1, 1)
         last = date(year, 12, 31)
         title = f"{year} 年总打卡热力图"
+        heading = f"{year} 年总打卡 · 全年"
     else:
         first = date(year, month, 1)
         last = date(year, month, monthrange(year, month)[1])
-        title = f"{category} · {year}年{month}月"
+        title = f"{category}打卡热力图"
+        heading = f"{category} · {year}年{month}月"
 
-    start = first - timedelta(days=first.weekday())
-    end = last + timedelta(days=6 - last.weekday())
+    # 年度图按周日开列，和网页年度图保持相近的排列。
+    if month is None:
+        start = first - timedelta(days=(first.weekday() + 1) % 7)
+        end = last + timedelta(days=(5 - last.weekday()) % 7)
+        week_start_sunday = True
+    else:
+        start = first - timedelta(days=first.weekday())
+        end = last + timedelta(days=6 - last.weekday())
+        week_start_sunday = False
+
     weeks = ((end - start).days + 1) // 7
-
     width = margin * 2 + label_width + weeks * (cell + gap)
-    height = margin * 2 + 36 + 7 * (cell + gap)
+    height = margin * 2 + top_height + 7 * (cell + gap) + 44
 
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
     draw.text((margin, margin), title, fill="#242424")
+    draw.text((margin, margin + 23), heading, fill="#555555")
 
-    for day_offset in range((end - start).days + 1):
-        day = start + timedelta(days=day_offset)
+    # 月份标签。
+    if month is None:
+        for m in range(1, 13):
+            md = date(year, m, 1)
+            col = (md - start).days // 7
+            x = margin + label_width + col * (cell + gap)
+            draw.text((x, margin + top_height), f"{m}月", fill="#555555")
+    else:
+        weekdays = ["一", "二", "三", "四", "五", "六", "日"]
+        for i, label in enumerate(weekdays):
+            y = margin + top_height + i * (cell + gap)
+            draw.text((margin, y), label, fill="#555555")
+
+    grid_top = margin + top_height + (0 if month is None else 0)
+
+    for offset in range((end - start).days + 1):
+        day = start + timedelta(days=offset)
         if not first <= day <= last:
             continue
 
@@ -114,17 +141,33 @@ def write_heatmap_png(year, month, category, filename):
         count = counts.get("总计", 0) if month is None else counts.get(category, 0)
         color = COLORS[min(count, len(COLORS) - 1)]
 
-        x = margin + label_width + (day - start).days // 7 * (cell + gap)
-        y = margin + 36 + day.weekday() * (cell + gap)
-        draw.rounded_rectangle(
-            (x, y, x + cell, y + cell),
-            radius=3,
+        if week_start_sunday:
+            col = (day - start).days // 7
+            row = (day.weekday() + 1) % 7
+        else:
+            col = (day - start).days // 7
+            row = day.weekday()
+
+        x = margin + label_width + col * (cell + gap)
+        y = grid_top + row * (cell + gap)
+        draw.rectangle((x, y, x + cell - 1, y + cell - 1), fill=color)
+
+    # 颜色图例，沿用实时热力图的颜色等级。
+    legend_y = grid_top + 7 * (cell + gap) + 8
+    draw.text((margin, legend_y), "少", fill="#555555")
+    legend_x = margin + 24
+    for color in COLORS:
+        draw.rectangle(
+            (legend_x, legend_y, legend_x + cell - 1, legend_y + cell - 1),
             fill=color
         )
+        legend_x += cell + 3
+    draw.text((legend_x + 2, legend_y), "多", fill="#555555")
 
     path = Path(filename)
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="PNG")
+
 def write_page(title, body, filename):
     document = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{html.escape(title)}</title><style>{STYLE}</style></head><body>{body}<footer>历史热力图档案 · 按归档时的 Notion 打卡数据生成</footer></body></html>'''
     path = Path(filename)
