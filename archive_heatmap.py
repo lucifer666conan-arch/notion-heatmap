@@ -300,7 +300,7 @@ def prop_value(page, name):
         return (p.get("select") or {}).get("name")
     return None
 
-def set_archive_record(record_map, title, kind, year, month, urls):
+def set_archive_record(record_map, title, kind, year, month, urls, preview_file=None):
     # 历史月份和往年只创建一次；当前月份/当前年度允许随日常打卡更新。
     key = (kind, year, month)
     existing = record_map.get(key)
@@ -315,10 +315,45 @@ def set_archive_record(record_map, title, kind, year, month, urls):
     }
     for name, url in urls.items():
         properties[name] = {"url": url}
+    
     if existing:
-        notion.pages.update(page_id=existing["id"], properties=properties)
+        page_id = existing["id"]
+        notion.pages.update(page_id=page_id, properties=properties)
     else:
-       notion.pages.create(parent={"data_source_id": get_archive_data_source_id()}, properties=properties)
+        created = notion.pages.create(
+            parent={"data_source_id": get_archive_data_source_id()},
+            properties=properties,
+        )
+        page_id = created["id"]
+
+    if preview_file:
+        upload_id = upload_png_to_notion(preview_file)
+
+        response = requests.patch(
+            f"https://api.notion.com/v1/pages/{page_id}",
+            headers={
+                "Authorization": f"Bearer {os.environ['NOTION_TOKEN']}",
+                "Notion-Version": "2026-03-11",
+                "Content-Type": "application/json",
+            },
+            json={
+                "properties": {
+                    "热力图预览": {
+                        "files": [
+                            {
+                                "type": "file_upload",
+                                "file_upload": {"id": upload_id},
+                                "name": Path(preview_file).name,
+                            }
+                        ]
+                    }
+                }
+            },
+            timeout=60,
+        )
+        response.raise_for_status()
+        print(f"Heatmap preview attached: {preview_file}")
+
 # Collect existing records so reruns don't create duplicates.
 record_map = {}
 for rec in get_archive_records():
