@@ -134,9 +134,6 @@ def make_month(year, month, category):
 def get_archive_records():
     records = []
     archive_data_source_id = get_archive_data_source_id()
-    data_sources = database.get("data_sources", [])
-    if not data_sources:
-        raise SystemExit("历史热力图档案数据库中没有找到数据源")
     cursor = None
     while True:
         args = {"data_source_id": archive_data_source_id, "page_size": 100}
