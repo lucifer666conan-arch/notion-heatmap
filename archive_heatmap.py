@@ -174,8 +174,7 @@ def set_archive_record(record_map, title, kind, year, month, urls):
     if existing:
         notion.pages.update(page_id=existing["id"], properties=properties)
     else:
-       notion.pages.create(parent={"data_source_id": get_archive_data_source_id()}, properties=properties) notion.databases.retrieve(database_id=ARCHIVE_DATABASE_ID)["data_sources"][0]["id"]}, properties=properties)
-
+       notion.pages.create(parent={"data_source_id": get_archive_data_source_id()}, properties=properties)
 # Collect existing records so reruns don't create duplicates.
 record_map = {}
 for rec in get_archive_records():
