@@ -9,7 +9,22 @@ from notion_client import Client
 
 SOURCE_DATA_SOURCE_ID = "2d345d2d-dce6-802c-86ff-000b746e3b43"
 ARCHIVE_DATABASE_ID = os.environ.get("NOTION_ARCHIVE_DATABASE_ID")
-TOKEN = os.environ.get("NOTION_TOKEN")
+ARCHIVE_PAGE_ID = ARCHIVE_DATABASE_ID
+
+def get_archive_data_source_id():
+    blocks = notion.blocks.children.list(
+        block_id=ARCHIVE_PAGE_ID,
+        page_size=100
+    )
+    for block in blocks.get("results", []):
+        if block.get("type") == "child_database":
+            database = notion.databases.retrieve(
+                database_id=block["id"]
+            )
+            sources = database.get("data_sources", [])
+            if sources:
+                return sources[0]["id"]
+    raise SystemExit("没有在历史热力图档案页面中找到数据库数据源")TOKEN = os.environ.get("NOTION_TOKEN")
 BASE_URL = "https://lucifer666conan-arch.github.io/notion-heatmap"
 CATEGORIES = ["书籍", "影视", "游戏", "做饭", "厨具"]
 CATEGORY_PATHS = {"书籍": "books", "影视": "media", "游戏": "games", "做饭": "cooking", "厨具": "kitchenware"}
