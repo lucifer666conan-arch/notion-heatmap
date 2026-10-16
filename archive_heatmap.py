@@ -8,6 +8,7 @@ from calendar import monthrange
 from notion_client import Client
 from PIL import Image, ImageDraw
 from playwright.sync_api import sync_playwright
+import requests
 SOURCE_DATA_SOURCE_ID = "2d345d2d-dce6-802c-86ff-000b746e3b43"
 ARCHIVE_DATABASE_ID = os.environ.get("NOTION_ARCHIVE_DATABASE_ID")
 ARCHIVE_PAGE_ID = ARCHIVE_DATABASE_ID
