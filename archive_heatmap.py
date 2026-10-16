@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 from collections import defaultdict
 from calendar import monthrange
 from notion_client import Client
-
+from PIL import Image, ImageDraw
 SOURCE_DATA_SOURCE_ID = "2d345d2d-dce6-802c-86ff-000b746e3b43"
 ARCHIVE_DATABASE_ID = os.environ.get("NOTION_ARCHIVE_DATABASE_ID")
 ARCHIVE_PAGE_ID = ARCHIVE_DATABASE_ID
@@ -78,7 +78,53 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{colo
 .month-day{position:relative;aspect-ratio:1;min-width:0;border-radius:5px;border:1px solid rgba(27,31,36,.06);display:flex;align-items:center;justify-content:center}
 .day-number{font-size:11px;color:#24292f;opacity:.85}.month-summary{font-size:12px;color:#57606a;margin:12px 0 0}footer{color:#57606a;font-size:12px;margin-top:18px}
 """
+def write_heatmap_png(year, month, category, filename):
+    """生成历史热力图 PNG 预览。month 为 None 时生成全年总打卡图。"""
+    cell = 18
+    gap = 4
+    margin = 24
+    label_width = 42
 
+    if month is None:
+        first = date(year, 1, 1)
+        last = date(year, 12, 31)
+        title = f"{year} 年总打卡热力图"
+    else:
+        first = date(year, month, 1)
+        last = date(year, month, monthrange(year, month)[1])
+        title = f"{category} · {year}年{month}月"
+
+    start = first - timedelta(days=first.weekday())
+    end = last + timedelta(days=6 - last.weekday())
+    weeks = ((end - start).days + 1) // 7
+
+    width = margin * 2 + label_width + weeks * (cell + gap)
+    height = margin * 2 + 36 + 7 * (cell + gap)
+
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
+    draw.text((margin, margin), title, fill="#242424")
+
+    for day_offset in range((end - start).days + 1):
+        day = start + timedelta(days=day_offset)
+        if not first <= day <= last:
+            continue
+
+        counts = daily.get(day.isoformat(), {})
+        count = counts.get("总计", 0) if month is None else counts.get(category, 0)
+        color = COLORS[min(count, len(COLORS) - 1)]
+
+        x = margin + label_width + (day - start).days // 7 * (cell + gap)
+        y = margin + 36 + day.weekday() * (cell + gap)
+        draw.rounded_rectangle(
+            (x, y, x + cell, y + cell),
+            radius=3,
+            fill=color
+        )
+
+    path = Path(filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(path, format="PNG")
 def write_page(title, body, filename):
     document = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{html.escape(title)}</title><style>{STYLE}</style></head><body>{body}<footer>历史热力图档案 · 按归档时的 Notion 打卡数据生成</footer></body></html>'''
     path = Path(filename)
