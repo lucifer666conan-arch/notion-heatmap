@@ -238,6 +238,7 @@ for year in sorted(years):
     # 已存在的往年档案保持不动；仅生成新档案或更新本年度实时档案。
     if not year_record_exists or year == TODAY.year:
         write_page(f"{year} 年总打卡热力图（历史档案）", make_year(year), f"{year_dir}/index.html")
+        write_heatmap_png(year, None, "总计", f"{year_dir}/heatmap.png")
     set_archive_record(record_map, f"{year}年总热力图", "年度", year, None,
                        {"总热力图": f"{BASE_URL}/{year_dir}/"})
     months = {date.fromisoformat(d).month for d in daily if date.fromisoformat(d).year == year}
