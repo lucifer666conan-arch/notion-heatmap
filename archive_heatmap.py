@@ -7,6 +7,7 @@ from collections import defaultdict
 from calendar import monthrange
 from notion_client import Client
 from PIL import Image, ImageDraw
+from playwright.sync_api import sync_playwright
 SOURCE_DATA_SOURCE_ID = "2d345d2d-dce6-802c-86ff-000b746e3b43"
 ARCHIVE_DATABASE_ID = os.environ.get("NOTION_ARCHIVE_DATABASE_ID")
 ARCHIVE_PAGE_ID = ARCHIVE_DATABASE_ID
@@ -168,6 +169,22 @@ def write_heatmap_png(year, month, category, filename):
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="PNG")
 
+def screenshot_html(html_file, png_file):
+    """使用 Chromium 将现有 HTML 热力图截成 PNG。"""
+    html_path = Path(html_file).resolve()
+    png_path = Path(png_file)
+    png_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(
+            viewport={"width": 1600, "height": 1000},
+            device_scale_factor=2,
+        )
+        page.goto(html_path.as_uri(), wait_until="networkidle")
+        page.screenshot(path=str(png_path), full_page=True)
+        browser.close()
+
 def write_page(title, body, filename):
     document = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{html.escape(title)}</title><style>{STYLE}</style></head><body>{body}<footer>历史热力图档案 · 按归档时的 Notion 打卡数据生成</footer></body></html>'''
     path = Path(filename)
@@ -281,7 +298,7 @@ for year in sorted(years):
     # 已存在的往年档案保持不动；仅生成新档案或更新本年度实时档案。
     if not year_record_exists or year == TODAY.year:
         write_page(f"{year} 年总打卡热力图（历史档案）", make_year(year), f"{year_dir}/index.html")
-        write_heatmap_png(year, None, "总计", f"{year_dir}/heatmap.png")
+        screenshot_html(f"{year_dir}/index.html", f"{year_dir}/heatmap.png")
     set_archive_record(record_map, f"{year}年总热力图", "年度", year, None,
                        {"总热力图": f"{BASE_URL}/{year_dir}/"})
     months = {date.fromisoformat(d).month for d in daily if date.fromisoformat(d).year == year}
