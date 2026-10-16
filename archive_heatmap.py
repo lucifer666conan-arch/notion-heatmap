@@ -170,6 +170,7 @@ def write_heatmap_png(year, month, category, filename):
     path.parent.mkdir(parents=True, exist_ok=True)
     image.save(path, format="PNG")
 
+
 def screenshot_html(html_file, png_file):
     """使用浏览器截图，并裁掉热力图下方的多余空白。"""
     html_path = Path(html_file).resolve()
@@ -185,13 +186,28 @@ def screenshot_html(html_file, png_file):
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
-        # 截图高度根据网页实际内容计算
+        # 只截取标题、说明、热力图面板，不包含底部 footer
         dimensions = page.evaluate("""() => {
-            const body = document.body;
-            const root = document.documentElement;
+            const content = document.querySelector('body > h1');
+            const summary = document.querySelector('body > .summary');
+            const panel = document.querySelector('body > .panel');
+            const section = document.querySelector('body > section.panel');
+
+            const targets = [content, summary, panel, section].filter(Boolean);
+            if (!targets.length) {
+                return {
+                    width: document.documentElement.scrollWidth,
+                    height: document.documentElement.scrollHeight
+                };
+            }
+
+            const rects = targets.map(el => el.getBoundingClientRect());
+            const right = Math.max(...rects.map(r => r.right));
+            const bottom = Math.max(...rects.map(r => r.bottom));
+
             return {
-                width: Math.max(body.scrollWidth, root.scrollWidth),
-                height: Math.max(body.scrollHeight, root.scrollHeight)
+                width: Math.ceil(right + 20),
+                height: Math.ceil(bottom + 24)
             };
         }""")
 
@@ -202,7 +218,7 @@ def screenshot_html(html_file, png_file):
 
         page.screenshot(
             path=str(png_path),
-            full_page=True,
+            full_page=False,
         )
         browser.close()
 
