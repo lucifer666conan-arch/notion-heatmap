@@ -32,7 +32,23 @@ TOKEN = os.environ.get("NOTION_TOKEN")
 BASE_URL = "https://lucifer666conan-arch.github.io/notion-heatmap"
 CATEGORIES = ["书籍", "影视", "游戏", "做饭", "厨具"]
 CATEGORY_PATHS = {"书籍": "books", "影视": "media", "游戏": "games", "做饭": "cooking", "厨具": "kitchenware"}
-COLORS = ["#ebedf0", "#fff4b8", "#b7d8ff", "#ffc48a", "#d7b5ff", "#b7e4c7", "#ff9c9c", "#c8a18a", "#242424"]
+TOTAL_COLORS = [
+    "#F2F2F2",
+    "#EAF3FF", "#D6E7FF", "#BFD9FF",
+    "#BDE5CA", "#A0D8B3",
+    "#FFDC60", "#F6CE40",
+    "#ED793A", "#DA642C",
+    "#B32E3C", "#972333",
+    "#441F7D", "#34165F",
+    "#000000"
+]
+CATEGORY_COLORS = {
+    "书籍": ["#FFFFFF", "#E2F5E8", "#BFE8CD", "#91D6A8", "#65C681", "#3EAD61", "#268A48", "#176B36", "#0B4825"],
+    "影视": ["#FFFFFF", "#F0E5FF", "#DCC5FF", "#C5A0FF", "#AA7BFA", "#8B55E8", "#7038C8", "#54259F", "#35166B"],
+    "游戏": ["#FFFFFF", "#E0F0FF", "#B9DEFF", "#8BC5FF", "#5BA8F5", "#3488E0", "#2169BF", "#174D96", "#103366"],
+    "做饭": ["#FFFFFF", "#FFF9D9", "#FFF0A3", "#FFE16B", "#FFCF3F", "#F5B51B", "#E99A0C", "#CF7508", "#A84E08"],
+    "厨具": ["#FFFFFF", "#FFE8F0", "#FFC9DD", "#FFA4C8", "#F77EAF", "#E85C98", "#D43D80", "#B52667", "#8C174D"]
+}
 TODAY = datetime.now(ZoneInfo("Asia/Shanghai")).date()
 
 if not TOKEN:
@@ -142,7 +158,8 @@ def write_heatmap_png(year, month, category, filename):
 
         counts = daily.get(day.isoformat(), {})
         count = counts.get("总计", 0) if month is None else counts.get(category, 0)
-        color = COLORS[min(count, len(COLORS) - 1)]
+        colors = TOTAL_COLORS if month is None else CATEGORY_COLORS[category]
+        color = colors[min(count, len(colors) - 1)]
 
         if week_start_sunday:
             col = (day - start).days // 7
@@ -155,16 +172,20 @@ def write_heatmap_png(year, month, category, filename):
         y = grid_top + row * (cell + gap)
         draw.rectangle((x, y, x + cell - 1, y + cell - 1), fill=color)
 
-    # 颜色图例，沿用实时热力图的颜色等级。
+    # 颜色图例：年度总图和分类月图分别使用对应配色。
     legend_y = grid_top + 7 * (cell + gap) + 8
     draw.text((margin, legend_y), "少", fill="#555555")
     legend_x = margin + 24
-    for color in COLORS:
+
+    colors = TOTAL_COLORS if month is None else CATEGORY_COLORS[category]
+
+    for color in colors:
         draw.rectangle(
             (legend_x, legend_y, legend_x + cell - 1, legend_y + cell - 1),
             fill=color
         )
         legend_x += cell + 3
+
     draw.text((legend_x + 2, legend_y), "多", fill="#555555")
 
     path = Path(filename)
@@ -314,13 +335,16 @@ def make_year(year):
         count = counts.get("总计", 0)
         detail = "；".join(f"{c} {counts.get(c, 0)} 次" for c in CATEGORIES)
         tip = html.escape(f"{day.isoformat()}｜总计 {count} 次｜{detail}", quote=True)
-        cells.append(f'<span class="cell" style="background:{COLORS[min(count,len(COLORS)-1)]}" title="{tip}"></span>')
+        cells.append(f'<span class="cell" style="background:{TOTAL_COLORS[min(count, len(TOTAL_COLORS)-1)]}" title="{tip}"></span>')
     labels = []
     for m in range(1, 13):
         md = date(year, m, 1)
         col = (md - start).days // 7 + 1
         labels.append(f'<span style="grid-column:{col}">{m}月</span>')
-    legend = ''.join(f'<span class="legend-cell" style="background:{c}"></span>' for c in COLORS)
+    legend = ''.join(
+    f'<span class="legend-cell" style="background:{TOTAL_COLORS[i]}"></span>'
+    for i in range(len(TOTAL_COLORS))
+    )
     section = f'<section class="panel"><h2>{year} 年总打卡 · 全年</h2><div class="scroll"><div class="month-labels" style="grid-template-columns:repeat({weeks},13px)">{"".join(labels)}</div><div class="heatmap" style="grid-template-columns:repeat({weeks},13px)">{"".join(cells)}</div></div><p class="legend">少 ← {legend} → 多</p></section>'
     return f'<h1>{year} 年总打卡热力图</h1><div class="summary">年度总打卡记录；悬停方格可查看当天各类别详情。</div>{section}'
 
@@ -335,7 +359,8 @@ def make_month(year, month, category):
         count = counts.get(category, 0)
         total += count
         tip = html.escape(f"{day.isoformat()}｜{category} {count} 次｜当天总计 {counts.get('总计',0)} 次", quote=True)
-        cells.append(f'<span class="month-day" style="background:{COLORS[min(count,len(COLORS)-1)]}" title="{tip}"><span class="day-number">{n}</span></span>')
+        colors = CATEGORY_COLORS[category]
+        cells.append(f'<span class="month-day" style="background:{colors[min(count, len(colors)-1)]}" title="{tip}"><span class="day-number">{n}</span></span>')
     while len(cells) % 7:
         cells.append('<span class="cell outside"></span>')
     section = f'<section class="panel"><h2>{html.escape(category)} · {year}年{month}月</h2><div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="month-grid">{"".join(cells)}</div><p class="month-summary">本月打卡：{total} 次</p></section>'
