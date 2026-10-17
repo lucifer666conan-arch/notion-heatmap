@@ -71,7 +71,8 @@ while True:
 STYLE = r"""
 *{box-sizing:border-box}body{margin:0;padding:18px;background:#f7f8fa;color:#24292f;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
 h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{color:#57606a;margin-bottom:18px;font-size:13px}
-.panel{display:table;width:max-content;max-width:none;background:white;border:1px solid #d8dee4;border-radius:12px;padding:16px;margin:0}.scroll{display:block;width:max-content;max-width:none;overflow:visible;padding:2px 2px 8px}
+.panel{width:fit-content;background:white;border:1px solid #d8dee4;border-radius:12px;padding:16px;margin:0}
+.scroll{width:max-content;overflow-x:auto;padding:2px 2px 8px}
 .month-labels{display:grid;height:30px;align-items:start;font-size:11px;line-height:16px;color:#57606a;column-gap:3px}
 .heatmap{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;gap:3px;width:max-content}
 .cell{width:13px;height:13px;border-radius:3px;border:1px solid rgba(27,31,36,.06)}.outside{background:transparent;border-color:transparent}
@@ -217,12 +218,8 @@ def screenshot_html(html_file, png_file):
                 : panelRect;
 
             // 横向：保留标题、说明、完整热力图和图例
-            const right = Math.max(
-                titleRect.right,
-                summaryRect.right,
-                contentRect.left + (content ? content.scrollWidth : 0),
-                legendRect.right
-            );
+           // 横向：以白色面板的右边界为准，额外保留约 10 个图片像素
+const right = panelRect.right;
 
             // 纵向：沿用之前成功的方式，保留标题、说明和整个面板
             const bottom = Math.max(
@@ -232,7 +229,7 @@ def screenshot_html(html_file, png_file):
             );
 
             return {
-                width: Math.ceil(right + 24),
+                width: Math.ceil(right + 5),
                 height: Math.ceil(bottom + 24)
             };
         }""")
