@@ -217,9 +217,8 @@ def screenshot_html(html_file, png_file):
                 ? legend.getBoundingClientRect()
                 : panelRect;
 
-            // 横向：保留标题、说明、完整热力图和图例
            // 横向：以白色面板的右边界为准，额外保留约 10 个图片像素
-const right = panelRect.right;
+           const right = panelRect.right;
 
             // 纵向：沿用之前成功的方式，保留标题、说明和整个面板
             const bottom = Math.max(
@@ -365,18 +364,29 @@ def set_archive_record(record_map, title, kind, year, month, urls, preview_file=
     # 历史月份和往年只创建一次；当前月份/当前年度允许随日常打卡更新。
     key = (kind, year, month)
     existing = record_map.get(key)
-    is_current = (kind == "年度" and year == TODAY.year) or (kind == "月度" and year == TODAY.year and month == TODAY.month)
+
+    is_current = (
+        (kind == "年度" and year == TODAY.year)
+        or (
+            kind.endswith("月度")
+            and year == TODAY.year
+            and month == TODAY.month
+        )
+    )
+
     if existing and not is_current:
         return
+
     properties = {
         "名称": {"title": [{"text": {"content": title}}]},
         "档案类型": {"select": {"name": kind}},
         "年份": {"number": year},
         "月份": {"number": month} if month is not None else {"number": None},
     }
+
     for name, url in urls.items():
         properties[name] = {"url": url}
-    
+
     if existing:
         page_id = existing["id"]
         notion.pages.update(page_id=page_id, properties=properties)
@@ -414,27 +424,53 @@ def set_archive_record(record_map, title, kind, year, month, urls, preview_file=
         )
         response.raise_for_status()
         print(f"Heatmap preview attached: {preview_file}")
-
-# Collect existing records so reruns don't create duplicates.
 record_map = {}
 for rec in get_archive_records():
     kind = prop_value(rec, "档案类型")
     year = prop_value(rec, "年份")
     month = prop_value(rec, "月份")
     if kind and year is not None:
-        record_map[(kind, int(year), int(month) if month is not None else None)] = rec
+        record_map[
+            (kind, int(year), int(month) if month is not None else None)
+        ] = rec
 
-# Archive every year/month found in source data, plus the current year and month.
+# 每个分类对应独立的月度档案类型和 URL 属性。
+MONTHLY_TYPES = {
+    "书籍": "书籍月度",
+    "影视": "影视月度",
+    "游戏": "游戏月度",
+    "做饭": "做饭月度",
+    "厨具": "厨具月度",
+}
+
+URL_PROPERTIES = {
+    "书籍": "书籍热力图",
+    "影视": "影视热力图",
+    "游戏": "游戏热力图",
+    "做饭": "做饭热力图",
+    "厨具": "厨具热力图",
+}
+
+# 收集有数据的年份，并确保当前年份也会生成。
 years = {date.fromisoformat(d).year for d in daily}
 years.add(TODAY.year)
+
 for year in sorted(years):
     year_dir = f"archive/{year}"
     year_record_exists = ("年度", year, None) in record_map
-    # 已存在的往年档案保持不动；仅生成新档案或更新本年度实时档案。
+
+    # 年度档案逻辑保持不变。
     if not year_record_exists or year == TODAY.year:
-        write_page(f"{year} 年总打卡热力图（历史档案）", make_year(year), f"{year_dir}/index.html")
-        screenshot_html(f"{year_dir}/index.html", f"{year_dir}/heatmap.png")
-    
+        write_page(
+            f"{year} 年总打卡热力图（历史档案）",
+            make_year(year),
+            f"{year_dir}/index.html",
+        )
+        screenshot_html(
+            f"{year_dir}/index.html",
+            f"{year_dir}/heatmap.png",
+        )
+
     set_archive_record(
         record_map,
         f"{year}年总热力图",
@@ -442,22 +478,65 @@ for year in sorted(years):
         year,
         None,
         {"总热力图": f"{BASE_URL}/{year_dir}/"},
-        preview_file=f"{year_dir}/heatmap.png" if year == TODAY.year else None,
+        preview_file=(
+            f"{year_dir}/heatmap.png"
+            if year == TODAY.year
+            else None
+        ),
     )
 
-    months = {date.fromisoformat(d).month for d in daily if date.fromisoformat(d).year == year}
+    # 找出该年份有打卡数据的月份。
+    months = {
+        date.fromisoformat(d).month
+        for d in daily
+        if date.fromisoformat(d).year == year
+    }
+
     if year == TODAY.year:
         months.add(TODAY.month)
+
     for month in sorted(months):
-        month_record_exists = ("月度", year, month) in record_map
-        is_current_month = year == TODAY.year and month == TODAY.month
-        urls = {}
+        is_current_month = (
+            year == TODAY.year and month == TODAY.month
+        )
+
         for category in CATEGORIES:
-            path = f"archive/{year}/{month:02d}/{CATEGORY_PATHS[category]}/index.html"
-            # 已存在的往年月份只保留原页面；当前月可持续更新，月末后冻结。
-            if not month_record_exists or is_current_month:
-                write_page(f"{category} · {year}年{month}月（历史档案）", make_month(year, month, category), path)
-            urls[{"书籍":"书籍热力图", "影视":"影视热力图", "游戏":"游戏热力图", "做饭":"做饭热力图", "厨具":"厨具热力图"}[category]] = f"{BASE_URL}/{path}"
-        set_archive_record(record_map, f"{year}年{month}月热力图", "月度", year, month, urls)
+            kind = MONTHLY_TYPES[category]
+            key = (kind, year, month)
+            record_exists = key in record_map
+
+            # 历史月份已有档案时不重复生成；
+            # 当月档案每次运行都更新。
+            if record_exists and not is_current_month:
+                continue
+
+            category_dir = (
+                f"archive/{year}/{month:02d}/"
+                f"{CATEGORY_PATHS[category]}"
+            )
+            html_path = f"{category_dir}/index.html"
+            png_path = f"{category_dir}/heatmap.png"
+
+            write_page(
+                f"{category} · {year}年{month}月（历史档案）",
+                make_month(year, month, category),
+                html_path,
+            )
+
+            # 使用浏览器截图生成月度 PNG 预览。
+            screenshot_html(html_path, png_path)
+
+            set_archive_record(
+                record_map,
+                f"{year}年{month}月{category}热力图",
+                kind,
+                year,
+                month,
+                {
+                    URL_PROPERTIES[category]:
+                        f"{BASE_URL}/{html_path}"
+                },
+                preview_file=png_path,
+            )
 
 print(f"历史热力图归档完成：处理 {len(years)} 个年份的数据。")
