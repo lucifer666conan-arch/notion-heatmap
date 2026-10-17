@@ -15,7 +15,7 @@ CATEGORIES = ["书籍", "影视", "游戏", "做饭", "厨具"]
 # 总热力图：15 格
 # 白、浅灰、蓝1-2、绿3-4、黄5-6、橙7-8、红9-10、紫11-12、黑
 TOTAL_COLORS = [
-    "#FFFFFF",
+    "#EBEDF0",
     "#F5F5F5",
     "#EAF3FF", "#D6E7FF",
     "#BDE5CA", "#A0D8B3",
@@ -29,27 +29,27 @@ TOTAL_COLORS = [
 # 五张分类月度热力图：各 9 格
 CATEGORY_COLORS = {
     "书籍": [
-        "#FFFFFF", "#E2F5E8", "#BFE8CD",
+        "#EBEDF0", "#E2F5E8", "#BFE8CD",
         "#91D6A8", "#65C681", "#3EAD61",
         "#268A48", "#176B36", "#0B4825"
     ],
     "影视": [
-        "#FFFFFF", "#F0E5FF", "#DCC5FF",
+        "#EBEDF0", "#F0E5FF", "#DCC5FF",
         "#C5A0FF", "#AA7BFA", "#8B55E8",
         "#7038C8", "#54259F", "#35166B"
     ],
     "游戏": [
-        "#FFFFFF", "#E0F0FF", "#B9DEFF",
+        "#EBEDF0", "#E0F0FF", "#B9DEFF",
         "#8BC5FF", "#5BA8F5", "#3488E0",
         "#2169BF", "#174D96", "#103366"
     ],
     "做饭": [
-        "#FFFFFF", "#FFF9D9", "#FFF0A3",
+        "#EBEDF0", "#FFF9D9", "#FFF0A3",
         "#FFE16B", "#FFCF3F", "#F5B51B",
         "#E99A0C", "#CF7508", "#A84E08"
     ],
     "厨具": [
-        "#FFFFFF", "#FFE8F0", "#FFC9DD",
+        "#EBEDF0", "#FFE8F0", "#FFC9DD",
         "#FFA4C8", "#F77EAF", "#E85C98",
         "#D43D80", "#B52667", "#8C174D"
     ]
