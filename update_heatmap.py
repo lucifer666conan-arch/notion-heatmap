@@ -12,15 +12,57 @@ TODAY = datetime.now(ZoneInfo("Asia/Shanghai")).date()
 YEAR = TODAY.year
 MONTH = TODAY.month
 CATEGORIES = ["书籍", "影视", "游戏", "做饭", "厨具"]
-COLORS = [
-    "#ebedf0", "#fff4b8", "#b7d8ff",
-    "#ffc48a", "#d7b5ff", "#b7e4c7",
-    "#ff9c9c", "#c8a18a", "#242424"
+# 总热力图：15 格
+# 白、浅灰、蓝1-2、绿3-4、黄5-6、橙7-8、红9-10、紫11-12、黑
+TOTAL_COLORS = [
+    "#FFFFFF",
+    "#F5F5F5",
+    "#EAF3FF", "#D6E7FF",
+    "#BDE5CA", "#A0D8B3",
+    "#FFDC60", "#F6CE40",
+    "#ED793A", "#DA642C",
+    "#B32E3C", "#972333",
+    "#441F7D", "#34165F",
+    "#000000"
 ]
 
+# 五张分类月度热力图：各 9 格
+CATEGORY_COLORS = {
+    "书籍": [
+        "#FFFFFF", "#E2F5E8", "#BFE8CD",
+        "#91D6A8", "#65C681", "#3EAD61",
+        "#268A48", "#176B36", "#0B4825"
+    ],
+    "影视": [
+        "#FFFFFF", "#F0E5FF", "#DCC5FF",
+        "#C5A0FF", "#AA7BFA", "#8B55E8",
+        "#7038C8", "#54259F", "#35166B"
+    ],
+    "游戏": [
+        "#FFFFFF", "#E0F0FF", "#B9DEFF",
+        "#8BC5FF", "#5BA8F5", "#3488E0",
+        "#2169BF", "#174D96", "#103366"
+    ],
+    "做饭": [
+        "#FFFFFF", "#FFF9D9", "#FFF0A3",
+        "#FFE16B", "#FFCF3F", "#F5B51B",
+        "#E99A0C", "#CF7508", "#A84E08"
+    ],
+    "厨具": [
+        "#FFFFFF", "#FFE8F0", "#FFC9DD",
+        "#FFA4C8", "#F77EAF", "#E85C98",
+        "#D43D80", "#B52667", "#8C174D"
+    ]
+}
 
-def color_for(count):
-    return COLORS[min(count, len(COLORS) - 1)]
+
+def total_color_for(count):
+    return TOTAL_COLORS[min(count, len(TOTAL_COLORS) - 1)]
+
+
+def category_color_for(category, count):
+    colors = CATEGORY_COLORS[category]
+    return colors[min(count, len(colors) - 1)]
 
 
 token = os.environ.get("NOTION_TOKEN")
@@ -85,7 +127,7 @@ def make_year_heatmap():
         detail = "；".join(f"{name} {counts.get(name, 0)} 次" for name in CATEGORIES)
         tip = f"{day.isoformat()}｜总计 {count} 次｜{detail}"
         cells.append(
-            f'<span class="cell" style="background:{color_for(count)}" '
+            f'<span class="cell" style="background:{total_color_for(count)}" '
             f'title="{html.escape(tip, quote=True)}"></span>'
         )
 
@@ -98,8 +140,8 @@ def make_year_heatmap():
         )
 
     legend = ''.join(
-        f'<span class="legend-cell" style="background:{color_for(i)}"></span>'
-        for i in range(len(COLORS))
+        f'<span class="legend-cell" style="background:{total_color_for(i)}"></span>'
+        for i in range(len(TOTAL_COLORS))
     )
     return f'''<section class="panel year-panel">
       <h2>{YEAR} 年总打卡 · 全年</h2>
@@ -127,7 +169,7 @@ def make_month_heatmap(category):
         month_total += count
         tip = f"{day.isoformat()}｜{category} {count} 次｜当天总计 {counts.get('总计', 0)} 次"
         cells.append(
-            f'<span class="month-day" style="background:{color_for(count)}" '
+            f'<span class="month-day" style="background:{category_color_for(category, count)}" '
             f'title="{html.escape(tip, quote=True)}"><span class="day-number">{day_number}</span></span>'
         )
     while len(cells) % 7:
