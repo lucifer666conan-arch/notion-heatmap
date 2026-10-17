@@ -229,8 +229,8 @@ const right = panelRect.right;
             );
 
             return {
-                width: Math.ceil(right + 5),
-                height: Math.ceil(bottom + 24)
+                width: Math.ceil(right + 10),
+                height: Math.ceil(bottom + 48)
             };
         }""")
 
