@@ -173,7 +173,7 @@ def write_heatmap_png(year, month, category, filename):
 
 
 
-def screenshot_html(html_file, png_file):
+def screenshot_html(html_file, png_file, is_monthly=False):
     """截图热力图，自动裁掉上下及左右多余空白。"""
     html_path = Path(html_file).resolve()
     png_path = Path(png_file)
@@ -188,7 +188,7 @@ def screenshot_html(html_file, png_file):
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
-        dimensions = page.evaluate("""() => {
+        dimensions = page.evaluate("""(isMonthly) => {
             const title = document.querySelector('body > h1');
             const summary = document.querySelector('body > .summary');
             const panel = document.querySelector('body > section.panel');
@@ -227,16 +227,22 @@ def screenshot_html(html_file, png_file):
                 summaryRect.bottom
             );
 
-            return {
-                width: Math.ceil(right + 10),
-                height: Math.ceil(bottom + 48)
-            };
-        }""")
+        return {
+           width: Math.ceil(right + (isMonthly ? 10 : 10)),
+           height: Math.ceil(bottom + 48)
+        };
+        }""", is_monthly)
+
+        viewport_width = (
+            min(max(dimensions["width"], 1), 3000)
+            if is_monthly
+            else min(max(dimensions["width"], 800), 3000)
+        )
 
         page.set_viewport_size({
-            "width": min(max(dimensions["width"], 800), 3000),
+            "width": viewport_width,
             "height": min(max(dimensions["height"], 300), 3000),
-        })
+       })
 
         page.screenshot(
             path=str(png_path),
@@ -523,8 +529,8 @@ for year in sorted(years):
                 html_path,
             )
 
-            # 使用浏览器截图生成月度 PNG 预览。
-            screenshot_html(html_path, png_path)
+            # 使用月度截图参数生成 PNG 预览。
+            screenshot_html(html_path, png_path, is_monthly=True)
 
             set_archive_record(
                 record_map,
