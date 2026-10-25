@@ -9,6 +9,22 @@
 body { margin: 0; padding: 18px; background: #f7f8fa; color: #24292f; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
 h1 { font-size: 24px; margin: 0 0 8px; }
 .summary { color: #57606a; margin-bottom: 18px; font-size: 13px; }
+.completion-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    background: white;
+    border: 1px solid #d8dee4;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.completion-item {
+    white-space: nowrap;
+}
 .panel { background: white; border: 1px solid #d8dee4; border-radius: 12px; padding: 16px; margin: 0; }
 h2 { font-size: 18px; margin: 0 0 14px; }
 .scroll { overflow-x: auto; padding: 2px 2px 8px; }
@@ -27,7 +43,7 @@ footer { color: #57606a; font-size: 12px; margin-top: 18px; }
 </style>
 </head>
 <body>
-<h1>2026 年总打卡热力图</h1><div class="summary">年度记录数：49 条。悬停方格可查看每天各类别的打卡详情。</div><section class="panel year-panel">
+<h1>2026 年总打卡热力图</h1><div class="summary">年度记录数：49 条。悬停方格可查看每天各类别的打卡详情。</div><div class="completion-stats"><span class="completion-item" style="color:#268A48">📚 阅读完成 5本</span><span class="completion-item" style="color:#7038C8">🎬 观看完毕 1部</span><span class="completion-item" style="color:#2169BF">🎮 游戏通关 0个</span></div><section class="panel year-panel">
       <h2>2026 年总打卡 · 全年</h2>
       <div class="scroll year-scroll">
         <div class="month-labels" style="grid-template-columns:repeat(53,13px)"><span style="grid-column:1">1月</span><span style="grid-column:6">2月</span><span style="grid-column:10">3月</span><span style="grid-column:14">4月</span><span style="grid-column:18">5月</span><span style="grid-column:23">6月</span><span style="grid-column:27">7月</span><span style="grid-column:31">8月</span><span style="grid-column:36">9月</span><span style="grid-column:40">10月</span><span style="grid-column:45">11月</span><span style="grid-column:49">12月</span></div>
