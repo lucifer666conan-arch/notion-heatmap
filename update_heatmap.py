@@ -120,8 +120,8 @@ def get_completion_counts(data_source_id, property_name, date_property):
                 total += number
 
             # 当年完成数量：只统计结束日期属于当前年份的记录
-           date_info = props.get(date_property, {}).get("date")
-           end_date = date_info.get("start") if date_info else None
+            date_info = props.get(date_property, {}).get("date")
+            end_date = date_info.get("start") if date_info else None
             if end_date and end_date[:4] == str(YEAR):
                 if number is not None:
                     year_total += number
