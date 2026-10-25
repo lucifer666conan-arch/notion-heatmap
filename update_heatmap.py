@@ -8,6 +8,29 @@ from calendar import monthrange
 from notion_client import Client
 
 DATA_SOURCE_ID = "2d345d2d-dce6-802c-86ff-000b746e3b43"
+COMPLETION_SOURCES = {
+    "阅读完成": {
+        "id": "1d145d2d-dce6-801c-aaba-000be2385582",
+        "property": "已读完计数",
+        "color": "#268A48",
+        "unit": "本",
+        "emoji": "📚",
+    },
+    "观看完毕": {
+        "id": "2d345d2d-dce6-818e-a4fc-000bb97539f5",
+        "property": "已看完计数",
+        "color": "#7038C8",
+        "unit": "部",
+        "emoji": "🎬",
+    },
+    "游戏通关": {
+        "id": "eb545d2d-dce6-824d-a120-87c95c8ed2aa",
+        "property": "已通关计数",
+        "color": "#2169BF",
+        "unit": "个",
+        "emoji": "🎮",
+    },
+}
 TODAY = datetime.now(ZoneInfo("Asia/Shanghai")).date()
 YEAR = TODAY.year
 MONTH = TODAY.month
@@ -69,6 +92,38 @@ if not token:
     raise SystemExit("缺少 NOTION_TOKEN 环境变量")
 
 notion = Client(auth=token)
+def get_completion_count(data_source_id, property_name):
+    total = 0
+    cursor = None
+
+    while True:
+        args = {
+            "data_source_id": data_source_id,
+            "page_size": 100,
+        }
+        if cursor:
+            args["start_cursor"] = cursor
+
+        result = notion.data_sources.query(**args)
+
+        for page in result["results"]:
+            prop = page.get("properties", {}).get(property_name, {})
+            formula = prop.get("formula", {})
+            number = formula.get("number")
+            if number is not None:
+                total += number
+
+        if not result.get("has_more"):
+            break
+        cursor = result.get("next_cursor")
+
+    return total
+
+
+completion_counts = {
+    name: get_completion_count(source["id"], source["property"])
+    for name, source in COMPLETION_SOURCES.items()
+}
 daily = defaultdict(lambda: {"总计": 0, **{name: 0 for name in CATEGORIES}})
 record_count = 0
 cursor = None
@@ -188,6 +243,22 @@ COMMON_STYLE = r"""
 body { margin: 0; padding: 18px; background: #f7f8fa; color: #24292f; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
 h1 { font-size: 24px; margin: 0 0 8px; }
 .summary { color: #57606a; margin-bottom: 18px; font-size: 13px; }
+.completion-stats {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 22px;
+    margin: 0 0 16px;
+    padding: 12px 16px;
+    background: white;
+    border: 1px solid #d8dee4;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+.completion-item {
+    white-space: nowrap;
+}
 .panel { background: white; border: 1px solid #d8dee4; border-radius: 12px; padding: 16px; margin: 0; }
 h2 { font-size: 18px; margin: 0 0 14px; }
 .scroll { overflow-x: auto; padding: 2px 2px 8px; }
@@ -224,11 +295,22 @@ def write_page(title, body_content, filename):
     Path(filename).write_text(document, encoding="utf-8")
 
 
-# 首页仅放年度总打卡长热力图。
+# 首页显示完成数量和年度总打卡长热力图。
 year_section = make_year_heatmap()
+
+completion_html = '<div class="completion-stats">'
+for name, source in COMPLETION_SOURCES.items():
+    count = completion_counts[name]
+    completion_html += (
+        f'<span class="completion-item" '
+        f'style="color:{source["color"]}">'
+        f'{source["emoji"]} {name} {count}{source["unit"]}'
+        f'</span>'
+    )
+completion_html += '</div>'
 write_page(
     f"{YEAR} 年总打卡热力图",
-    f'<h1>{YEAR} 年总打卡热力图</h1><div class="summary">年度记录数：{record_count} 条。悬停方格可查看每天各类别的打卡详情。</div>{year_section}',
+    f'<h1>{YEAR} 年总打卡热力图</h1><div class="summary">年度记录数：{record_count} 条。悬停方格可查看每天各类别的打卡详情。</div>{completion_html}{year_section}',
     "index.html",
 )
 
