@@ -12,6 +12,7 @@ COMPLETION_SOURCES = {
     "阅读完成": {
         "id": "1d145d2d-dce6-801c-aaba-000be2385582",
         "property": "已读完计数",
+        "date_property": "结束日期",
         "color": "#268A48",
         "unit": "本",
         "emoji": "📚",
@@ -19,6 +20,7 @@ COMPLETION_SOURCES = {
     "观看完毕": {
         "id": "2d345d2d-dce6-818e-a4fc-000bb97539f5",
         "property": "已看完计数",
+        "date_property": "结束日期",
         "color": "#7038C8",
         "unit": "部",
         "emoji": "🎬",
@@ -26,6 +28,7 @@ COMPLETION_SOURCES = {
     "游戏通关": {
         "id": "eb545d2d-dce6-824d-a120-87c95c8ed2aa",
         "property": "已通关计数",
+        "date_property": "结束日期",
         "color": "#2169BF",
         "unit": "个",
         "emoji": "🎮",
@@ -92,8 +95,9 @@ if not token:
     raise SystemExit("缺少 NOTION_TOKEN 环境变量")
 
 notion = Client(auth=token)
-def get_completion_count(data_source_id, property_name):
+def get_completion_counts(data_source_id, property_name, date_property):
     total = 0
+    year_total = 0
     cursor = None
 
     while True:
@@ -107,23 +111,39 @@ def get_completion_count(data_source_id, property_name):
         result = notion.data_sources.query(**args)
 
         for page in result["results"]:
-            prop = page.get("properties", {}).get(property_name, {})
-            formula = prop.get("formula", {})
+            props = page.get("properties", {})
+
+            # 累计完成数量：继续使用原有的 0/1 公式属性
+            formula = props.get(property_name, {}).get("formula", {})
             number = formula.get("number")
             if number is not None:
                 total += number
+
+            # 当年完成数量：只统计结束日期属于当前年份的记录
+            date_info = props.get(date_property, {}).get("date", {})
+            end_date = date_info.get("start")
+            if end_date and end_date[:4] == str(YEAR):
+                if number is not None:
+                    year_total += number
 
         if not result.get("has_more"):
             break
         cursor = result.get("next_cursor")
 
-    return total
+    return total, year_total
 
 
-completion_counts = {
-    name: get_completion_count(source["id"], source["property"])
-    for name, source in COMPLETION_SOURCES.items()
-}
+completion_counts = {}
+for name, source in COMPLETION_SOURCES.items():
+    total, year_total = get_completion_counts(
+        source["id"],
+        source["property"],
+        source["date_property"],
+    )
+    completion_counts[name] = {
+        "total": total,
+        "year": year_total,
+    }
 daily = defaultdict(lambda: {"总计": 0, **{name: 0 for name in CATEGORIES}})
 record_count = 0
 cursor = None
@@ -244,20 +264,38 @@ body { margin: 0; padding: 18px; background: #f7f8fa; color: #24292f; font-famil
 h1 { font-size: 24px; margin: 0 0 8px; }
 .summary { color: #57606a; margin-bottom: 18px; font-size: 13px; }
 .completion-stats {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px 22px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
     margin: 0 0 16px;
-    padding: 12px 16px;
+    padding: 16px;
     background: white;
     border: 1px solid #d8dee4;
     border-radius: 10px;
+}
+
+.completion-item {
+    min-width: 0;
+}
+
+.completion-title {
     font-size: 14px;
     font-weight: 600;
-}
-.completion-item {
     white-space: nowrap;
+    margin-bottom: 8px;
+}
+
+.completion-total {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 3px;
+}
+
+.completion-year {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
 }
 .panel { background: white; border: 1px solid #d8dee4; border-radius: 12px; padding: 16px; margin: 0; }
 h2 { font-size: 18px; margin: 0 0 14px; }
@@ -300,12 +338,29 @@ year_section = make_year_heatmap()
 
 completion_html = '<div class="completion-stats">'
 for name, source in COMPLETION_SOURCES.items():
-    count = completion_counts[name]
+    counts = completion_counts[name]
+    total = counts["total"]
+    year_total = counts["year"]
+
+    # 当年数字使用同色系的浅色
+    year_color = {
+        "阅读完成": "#65B77E",
+        "观看完毕": "#A58ADE",
+        "游戏通关": "#72A5DE",
+    }[name]
+
     completion_html += (
-        f'<span class="completion-item" '
-        f'style="color:{source["color"]}">'
-        f'{source["emoji"]} {name} {count}{source["unit"]}'
-        f'</span>'
+        f'<div class="completion-item">'
+        f'<div class="completion-title" style="color:{source["color"]}">'
+        f'{source["emoji"]} {name}'
+        f'</div>'
+        f'<div class="completion-total" style="color:{source["color"]}">'
+        f'{total}{source["unit"]}'
+        f'</div>'
+        f'<div class="completion-year" style="color:{year_color}">'
+        f'{YEAR} · {year_total}{source["unit"]}'
+        f'</div>'
+        f'</div>'
     )
 completion_html += '</div>'
 write_page(
