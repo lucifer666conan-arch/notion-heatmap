@@ -57,6 +57,71 @@ h2 { font-size: 18px; margin: 0 0 14px; }
 .month-day { position: relative; aspect-ratio: 1; min-width: 0; border-radius: 5px; border: 1px solid rgba(27,31,36,.06); display: flex; align-items: center; justify-content: center; }
 .day-number { font-size: 11px; color: #24292f; opacity: .85; }
 .month-summary { font-size: 12px; color: #57606a; margin: 12px 0 0; }
+
+.category-stats {
+    margin-top: 12px;
+}
+
+.category-stats h2 {
+    margin-bottom: 16px;
+}
+
+.stat-row {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f1f3;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.stat-label {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.stat-values {
+    min-width: 0;
+}
+
+.stat-main {
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.stat-sub {
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+    .stat-row {
+        grid-template-columns: 116px minmax(0, 1fr);
+        column-gap: 8px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+
+    .stat-main {
+        font-size: 12px;
+    }
+
+    .stat-sub {
+        font-size: 11px;
+    }
+}
+
 footer { color: #57606a; font-size: 12px; margin-top: 18px; }
 </style>
 </head>
@@ -66,7 +131,7 @@ footer { color: #57606a; font-size: 12px; margin-top: 18px; }
       <div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
       <div class="month-grid"><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="month-day" style="background:#EBEDF0" title="2026-10-01｜书籍 0 次｜当天总计 0 次"><span class="day-number">1</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-02｜书籍 0 次｜当天总计 0 次"><span class="day-number">2</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-03｜书籍 0 次｜当天总计 0 次"><span class="day-number">3</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-04｜书籍 0 次｜当天总计 0 次"><span class="day-number">4</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-05｜书籍 0 次｜当天总计 0 次"><span class="day-number">5</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-06｜书籍 0 次｜当天总计 0 次"><span class="day-number">6</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-07｜书籍 0 次｜当天总计 0 次"><span class="day-number">7</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-08｜书籍 0 次｜当天总计 0 次"><span class="day-number">8</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-09｜书籍 0 次｜当天总计 0 次"><span class="day-number">9</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-10｜书籍 0 次｜当天总计 0 次"><span class="day-number">10</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-11｜书籍 0 次｜当天总计 0 次"><span class="day-number">11</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-12｜书籍 0 次｜当天总计 0 次"><span class="day-number">12</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-13｜书籍 0 次｜当天总计 0 次"><span class="day-number">13</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-14｜书籍 0 次｜当天总计 0 次"><span class="day-number">14</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-15｜书籍 0 次｜当天总计 0 次"><span class="day-number">15</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-16｜书籍 0 次｜当天总计 0 次"><span class="day-number">16</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-17｜书籍 0 次｜当天总计 2 次"><span class="day-number">17</span></span><span class="month-day" style="background:#E2F5E8" title="2026-10-18｜书籍 1 次｜当天总计 6 次"><span class="day-number">18</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-19｜书籍 0 次｜当天总计 6 次"><span class="day-number">19</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-20｜书籍 0 次｜当天总计 5 次"><span class="day-number">20</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-21｜书籍 0 次｜当天总计 3 次"><span class="day-number">21</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-22｜书籍 0 次｜当天总计 5 次"><span class="day-number">22</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-23｜书籍 0 次｜当天总计 1 次"><span class="day-number">23</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-24｜书籍 0 次｜当天总计 8 次"><span class="day-number">24</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-25｜书籍 0 次｜当天总计 5 次"><span class="day-number">25</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-26｜书籍 0 次｜当天总计 8 次"><span class="day-number">26</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-27｜书籍 0 次｜当天总计 0 次"><span class="day-number">27</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-28｜书籍 0 次｜当天总计 0 次"><span class="day-number">28</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-29｜书籍 0 次｜当天总计 0 次"><span class="day-number">29</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-30｜书籍 0 次｜当天总计 0 次"><span class="day-number">30</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-31｜书籍 0 次｜当天总计 0 次"><span class="day-number">31</span></span><span class="cell outside"></span></div>
       <p class="month-summary">本月打卡：1 次</p>
-    </section>
+    </section><section class="panel category-stats"><h2 style="color:#268A48">📚 阅读统计</h2><div class="stat-row"><div class="stat-label" style="color:#268A48">至今阅读📖</div><div class="stat-values"><div class="stat-main" style="color:#268A48">0 · 0 · 0</div><div class="stat-sub" style="color:#65A978">0 · 0</div></div></div><div class="stat-row"><div class="stat-label" style="color:#46965D">2026年阅读📖</div><div class="stat-values"><div class="stat-main" style="color:#46965D">8分钟 · 1天 · 1次</div><div class="stat-sub" style="color:#7FBD8D">0小时8分钟 · 8分钟</div></div></div><div class="stat-row"><div class="stat-label" style="color:#72B584">10月阅读📖</div><div class="stat-values"><div class="stat-main" style="color:#72B584">8分钟 · 1天 · 1次</div><div class="stat-sub" style="color:#9ACDA5">0小时8分钟 · 8分钟</div></div></div></section>
 <footer>由 Notion 打卡数据生成 · 页面每日自动更新</footer>
 </body>
 </html>

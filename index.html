@@ -57,6 +57,71 @@ h2 { font-size: 18px; margin: 0 0 14px; }
 .month-day { position: relative; aspect-ratio: 1; min-width: 0; border-radius: 5px; border: 1px solid rgba(27,31,36,.06); display: flex; align-items: center; justify-content: center; }
 .day-number { font-size: 11px; color: #24292f; opacity: .85; }
 .month-summary { font-size: 12px; color: #57606a; margin: 12px 0 0; }
+
+.category-stats {
+    margin-top: 12px;
+}
+
+.category-stats h2 {
+    margin-bottom: 16px;
+}
+
+.stat-row {
+    display: grid;
+    grid-template-columns: 148px minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f1f3;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.stat-label {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.stat-values {
+    min-width: 0;
+}
+
+.stat-main {
+    font-size: 14px;
+    line-height: 1.7;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.stat-sub {
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+    .stat-row {
+        grid-template-columns: 116px minmax(0, 1fr);
+        column-gap: 8px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+
+    .stat-main {
+        font-size: 12px;
+    }
+
+    .stat-sub {
+        font-size: 11px;
+    }
+}
+
 footer { color: #57606a; font-size: 12px; margin-top: 18px; }
 </style>
 </head>
