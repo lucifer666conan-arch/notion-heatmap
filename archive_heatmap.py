@@ -798,24 +798,40 @@ def make_month(year, month, category):
 
         # 每个分类四档统计颜色；标题使用 stat_titles 中最深的颜色
         category_colors = {
-            "书籍": ("#328A50", "#6CAF82", "#8CC6A0", "#B1D9BD"),
-            "影视": ("#7038C8", "#A17ADC", "#BDA0E7", "#D9C9F2"),
-            "游戏": ("#2169BF", "#6598D3", "#8DB5E4", "#BAD4F0"),
-            "做饭": ("#CF7508", "#DDA85F", "#E8C18A", "#F2DDBB"),
-            "厨具": ("#B52667", "#CE729C", "#DFA0BB", "#EBC8D9"),
+            "书籍": (
+                "#328A50", "#4A955F", "#60A570",
+                "#78B384", "#8BC098", "#A2CEAD",
+            ),
+            "影视": (
+                "#824CC4", "#905FCB", "#A174D2",
+                "#B08ADA", "#BE9FE1", "#CDB6E9",
+            ),
+            "游戏": (
+                "#3478C4", "#4C88CB", "#6598D2",
+                "#7FA9DA", "#96B9E1", "#AEC9E9",
+            ),
+            "做饭": (
+                "#C27A18", "#CD8A2F", "#D69A48",
+                "#DFA961", "#E6B879", "#EDC793",
+            ),
+            "厨具": (
+                "#B53C70", "#C14F7D", "#CC648D",
+                "#D57A9D", "#DE8FAE", "#E5A5BC",
+            ),
         }
 
         colors = category_colors.get(
             category,
-            ("#6e7781", "#a1a8b0", "#b1b8c0", "#c1c7ce")
+            ("#6e7781", "#858d96", "#969da5",
+             "#a5acb3", "#b1b8c0", "#bdc3ca")
         )
 
         if label.startswith("至今"):
             main_color, light_color = colors[0], colors[1]
         elif label.startswith(f"{year}年"):
-            main_color, light_color = colors[1], colors[2]
-        else:
             main_color, light_color = colors[2], colors[3]
+        else:
+            main_color, light_color = colors[4], colors[5]
 
         return (
             '<div class="month-stat-row">'
