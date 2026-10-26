@@ -540,7 +540,7 @@ def screenshot_html(html_file, png_file, is_monthly=False):
 
             return {
                 width: Math.ceil(rect.right + window.scrollX + 20),
-                height: Math.ceil(rect.bottom + window.scrollY + 40)
+                height: Math.ceil(rect.bottom + window.scrollY + 50)
             };
         }""")
 
@@ -797,11 +797,11 @@ def make_month(year, month, category):
         )
 
         category_colors = {
-            "书籍": ("#268A48", "#65AD7D", "#A8D7B5"),
-            "影视": ("#7038C8", "#9B76D6", "#CBB8EA"),
-            "游戏": ("#2169BF", "#6598D3", "#A9C8EB"),
-            "做饭": ("#CF7508", "#DDA85F", "#F0D0A0"),
-            "厨具": ("#B52667", "#CE729C", "#E6B3CB"),
+            "书籍": ("#268A48", "#65AD7D", "#C4E5CE"),
+            "影视": ("#7038C8", "#9B76D6", "#DFD2F3"),
+            "游戏": ("#2169BF", "#6598D3", "#C9DDF3"),
+            "做饭": ("#CF7508", "#DDA85F", "#F5DFBD"),
+            "厨具": ("#B52667", "#CE729C", "#EBC8D9"),
         }
         title_color, main_color, light_color = category_colors.get(
             category,
