@@ -525,25 +525,30 @@ def screenshot_html(html_file, png_file, is_monthly=False):
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
+
         dimensions = page.evaluate("""() => {
-            const body = document.body;
+            const panel = document.querySelector('.panel');
 
-            let right = 0;
-            let bottom = 0;
-
-            for (const el of body.querySelectorAll('*')) {
-                const r = el.getBoundingClientRect();
-                if (r.width > 0 && r.height > 0) {
-                    right = Math.max(right, r.right + window.scrollX);
-                    bottom = Math.max(bottom, r.bottom + window.scrollY);
-                }
+            if (!panel) {
+                return {
+                    width: document.documentElement.scrollWidth,
+                    height: document.documentElement.scrollHeight
+                };
             }
 
+            const rect = panel.getBoundingClientRect();
+
             return {
-                width: Math.ceil(right + 8),
-                height: Math.ceil(bottom + 8)
+                width: Math.ceil(rect.right + window.scrollX + 20),
+                height: Math.ceil(
+                    Math.max(
+                        rect.bottom + window.scrollY + 20,
+                        document.documentElement.scrollHeight
+                    )
+                )
             };
         }""")
+
 
         width = max(400, min(dimensions["width"], 5000))
         height = max(200, min(dimensions["height"], 12000))
