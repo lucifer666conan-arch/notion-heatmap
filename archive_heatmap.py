@@ -318,7 +318,13 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{colo
 .day-number{font-size:11px;color:#24292f;opacity:.85}
 .month-summary{font-size:12px;color:#57606a;margin:12px 0 0}
 .month-stats{margin-top:16px;padding-top:12px;border-top:1px solid #eaeef2;display:flex;flex-direction:column;gap:9px;min-width:0}
-
+.month-stats-title{
+  font-size:14px;
+  font-weight:700;
+  line-height:1.6;
+  color:#24292f;
+  margin-bottom:2px;
+}
 .month-stat-row{
   display:grid;
   grid-template-columns:150px minmax(0,1fr);
@@ -352,7 +358,18 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{colo
   line-height:1.5;
   overflow-wrap:anywhere;
 }
-
+.year-summary{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:4px 8px;
+  margin:0 0 14px;
+  font-size:12px;
+  line-height:1.8;
+}
+.summary-separator{
+  color:#8c959f;
+}
 .year-stats{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -654,45 +671,47 @@ def make_year(year):
         for i in range(len(TOTAL_COLORS))
     )
 
-   
+    summary_html = (
+        '<div class="year-summary">'
+        f'<span style="color:#E99A0C">全年总打卡：{year_records}次</span>'
+        '<span class="summary-separator">·</span>'
+        f'<span style="color:#00A6A6">打卡天数：{active_days}天</span>'
+        '<span class="summary-separator">·</span>'
+        f'<span style="color:#268A48">书籍：{category_totals["书籍"]}次</span>'
+        '<span class="summary-separator">·</span>'
+        f'<span style="color:#7038C8">影视：{category_totals["影视"]}次</span>'
+        '<span class="summary-separator">·</span>'
+        f'<span style="color:#2169BF">游戏：{category_totals["游戏"]}次</span>'
+        '<span class="summary-separator">·</span>'
+        f'<span style="color:#E99A0C">做饭：{category_totals["做饭"]}次</span>'
+        '<span class="summary-separator">·</span>'
+        f'<span style="color:#D43D80">厨具：{category_totals["厨具"]}次</span>'
+        '</div>'
+    )
+
     stats = (
         '<div class="year-stats">'
-        f'<div class="year-stat"><span>全年总打卡</span>'
-        f'<strong>{year_records} 次</strong></div>'
-        f'<div class="year-stat"><span>打卡天数</span>'
-        f'<strong>{active_days} 天</strong></div>'
-        + ''.join(
-            f'<div class="year-stat"><span>{c}打卡</span>'
-            f'<strong>{category_totals[c]} 次</strong></div>'
-            for c in CATEGORIES
-        )
-       
-        
         + ''.join(
             f'<div class="year-stat">'
-            f'<span style="color:{main_color}">{label}完成</span>'
+            f'<span style="color:{main_color}">{label}</span>'
             f'<strong class="stat-main" style="color:{main_color}">'
             f'{completion_totals[key]}{unit}</strong>'
             f'<span class="stat-secondary" style="color:{light_color}">'
-            f'{year}年{label}完成</span>'
-            f'<strong class="stat-secondary" style="color:{light_color}">'
-            f'{completion_yearly[key].get(year, 0)}{unit}</strong>'
+            f'{year} · {completion_yearly[key].get(year, 0)}{unit}</span>'
             f'</div>'
             for key, label, unit, main_color, light_color in [
-                ("阅读", "📚 阅读", "本", "#268A48", "#76B58A"),
-                ("观看", "🎬 观看", "部", "#7038C8", "#A58AD9"),
-                ("游戏", "🎮 游戏", "个", "#2169BF", "#80A8D9"),
+                ("阅读", "📚 阅读完成", "本", "#268A48", "#76B58A"),
+                ("观看", "🎬 观看完成", "部", "#7038C8", "#A58AD9"),
+                ("游戏", "🎮 游戏通关", "个", "#2169BF", "#80A8D9"),
             ]
         )
-
-
         + '</div>'
     )
-
 
     section = (
         f'<section class="panel">'
         f'<h2>{year} 年总打卡 · 全年</h2>'
+        f'{summary_html}'
         f'{stats}'
         f'<div class="scroll">'
         f'<div class="month-labels" style="grid-template-columns:repeat({weeks},13px)">'
@@ -813,11 +832,50 @@ def make_month(year, month, category):
         )
 
 
+    stat_titles = {
+        "书籍": "📚 阅读统计",
+        "影视": "📺 观影统计",
+        "游戏": "🕹️ 游戏统计",
+        "做饭": "🥘 做饭统计",
+        "厨具": "🍴 厨具使用统计",
+    }
+
+    stat_labels = {
+        "书籍": (
+            "至今阅读📖",
+            f"{year}年阅读📖",
+            "当月阅读📖",
+        ),
+        "影视": (
+            "至今观看🎞️",
+            f"{year}年观看🎞️",
+            f"{month}月观看🎞️",
+        ),
+        "游戏": (
+            "至今玩了🎮",
+            f"{year}年玩了🎮",
+            f"{month}月玩了🎮",
+        ),
+        "做饭": (
+            "至今做饭🍳",
+            f"{year}年做饭🍳",
+            f"{month}月做饭🍳",
+        ),
+        "厨具": (
+            "至今厨具使用🍽️",
+            f"{year}年厨具使用🍽️",
+            f"{month}月厨具使用🍽️",
+        ),
+    }
+
+    labels = stat_labels[category]
+
     stats_html = (
-        '<div class="month-stats">'
-        + stats_row("至今累计", all_time)
-        + stats_row(f"{year}年累计", year_stats)
-        + stats_row(f"{month}月累计", month_stats)
+        f'<div class="month-stats">'
+        f'<div class="month-stats-title">{stat_titles[category]}</div>'
+        + stats_row(labels[0], all_time)
+        + stats_row(labels[1], year_stats)
+        + stats_row(labels[2], month_stats)
         + '</div>'
     )
 
@@ -964,7 +1022,7 @@ for year in sorted(years):
     year_record_exists = ("年度", year, None) in record_map
 
     # 年度档案逻辑保持不变。
-    if True:
+    if year == TODAY.year or not year_record_exists:
         write_page(
             f"{year} 年总打卡热力图（历史档案）",
             make_year(year),
@@ -1009,9 +1067,9 @@ for year in sorted(years):
             key = (kind, year, month)
             record_exists = key in record_map
 
-            # 历史月份已有档案时不重复生成；
-            # 当月档案每次运行都更新。
-            if False:
+            # 历史月份已有档案时跳过；
+            # 当前月份每次运行都重新生成并更新。
+            if record_exists and not is_current_month:
                 continue
 
             category_dir = (
