@@ -219,11 +219,9 @@ def format_hours_minutes(minutes):
     return f"{hours}小时{mins}分钟"
 
 
-def get_page_stats(page_id):
-    """读取统计首页现有属性，不修改数据库。"""
-    page = notion.pages.retrieve(page_id=page_id)
-    return page.get("properties", {})
-
+def get_page_stats(database_id):
+    database = notion.databases.retrieve(database_id=database_id)
+    return database.get("properties", {})
 
 def make_category_stats(category):
     """生成分类热力图下方的至今、当年、当月统计。"""
