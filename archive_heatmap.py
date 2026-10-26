@@ -1033,7 +1033,13 @@ def prop_value(page, name):
     if p.get("type") == "select":
         return (p.get("select") or {}).get("name")
     return None
-
+def archive_empty_month_record(page_id):
+    """将确认无对应日志的月度归档移入 Notion 回收站。"""
+    notion.pages.update(
+        page_id=page_id,
+        in_trash=True,
+    )
+    print(f"已将空白月度归档移入回收站：{page_id}")
 
 def set_archive_record(
     record_map,
@@ -1200,34 +1206,62 @@ for year in sorted(years):
 
     if year == TODAY.year:
         months.add(TODAY.month)
+    # 同时检查 Notion 档案数据库中已有的月度归档，
+    # 避免遗漏日志和本地状态文件中都没有记录的旧月份。
+    for kind, record_year, record_month in record_map:
+        if (
+            kind in MONTHLY_TYPES.values()
+            and record_year == year
+            and record_month is not None
+            and 1 <= record_month <= 12
+        ):
+            months.add(record_month)
 
     for month in sorted(months):
         is_current_month = (
             year == TODAY.year and month == TODAY.month
         )
-        month_has_logs = any(
+
+        month_state_key = f"{year}-{month:02d}-__month_status__"
+        new_archive_state[month_state_key] = "has_logs" if any(
             log["日期"].year == year
             and log["日期"].month == month
             for log in all_logs
-        )
-
-        month_state_key = f"{year}-{month:02d}-__month_status__"
-        previous_month_status = archive_state.get(month_state_key)
-        current_month_status = (
-            "has_logs" if month_has_logs else "empty"
-        )
-
-        empty_month_needs_refresh = (
-            not month_has_logs
-            and previous_month_status != "empty"
-        )
-
-        new_archive_state[month_state_key] = current_month_status
+        ) else "empty"
 
         for category in CATEGORIES:
             kind = MONTHLY_TYPES[category]
             key = (kind, year, month)
             record_exists = key in record_map
+
+            # 只根据日志表中该月、该类别的实际记录判断。
+            category_has_logs = any(
+                log["日期"].year == year
+                and log["日期"].month == month
+                and log["类别"] == category
+                for log in all_logs
+            )
+
+
+            state_key = f"{year}-{month:02d}-{category}"
+
+            if not category_has_logs:
+                # 没有对应日志：将已有的月度归档移入 Notion 回收站。
+                if record_exists:
+                    page_id = record_map[key]["id"]
+                    print(
+                        f"准备移入回收站：{year}-{month:02d} "
+                        f"{category}，Notion 页面 ID：{page_id}"
+                    )
+
+                    print(
+                        f"[检查模式] 暂不移入回收站："
+                        f"{year}-{month:02d} {category}"
+                    )
+
+                # 不再保留该类别的旧状态。
+                new_archive_state.pop(state_key, None)
+                continue
 
             category_dir = (
                 f"archive/{year}/{month:02d}/"
@@ -1236,17 +1270,13 @@ for year in sorted(years):
             html_path = Path(f"{category_dir}/index.html")
             png_path = Path(f"{category_dir}/heatmap.png")
 
-            state_key = f"{year}-{month:02d}-{category}"
             current_hash = make_month_archive_hash(
                 year, month, category
             )
             previous_hash = archive_state.get(state_key)
 
-            # 当前月份始终更新。
-            # 历史月份只有在首次运行、数据变化或归档缺失时才更新。
             needs_update = (
                 is_current_month
-                or empty_month_needs_refresh
                 or first_state_run
                 or previous_hash != current_hash
                 or not html_path.exists()
@@ -1294,6 +1324,8 @@ for year in sorted(years):
 
             new_archive_state[state_key] = current_hash
             updated_archive_count += 1
+
+            
 
 # 所有年度和月度归档处理成功后，再统一保存状态。
 save_archive_state(new_archive_state)
