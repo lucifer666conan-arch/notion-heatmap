@@ -57,32 +57,141 @@ if not ARCHIVE_DATABASE_ID:
     raise SystemExit("缺少 NOTION_ARCHIVE_DATABASE_ID 环境变量")
 notion = Client(auth=TOKEN)
 
-# 读取完整历史数据，按日期和类别统计。
-daily = defaultdict(lambda: {"总计": 0, **{c: 0 for c in CATEGORIES}})
+# 读取完整历史数据，按日期、类别、时长统计。
+daily = defaultdict(lambda: {
+    "总计": 0,
+    **{c: 0 for c in CATEGORIES},
+})
+
+all_logs = []
 cursor = None
+
+
+def get_formula_number(props, name):
+    """读取 Notion 数字公式属性；不存在或为空时返回 0。"""
+    prop = props.get(name, {})
+    if prop.get("type") != "formula":
+        return 0
+
+    formula = prop.get("formula", {})
+    if formula.get("type") != "number":
+        return 0
+
+    return formula.get("number") or 0
+
+
+def get_duration_minutes(start_text, end_text):
+    """根据开始时间和结束时间计算分钟数。"""
+    if not start_text or not end_text:
+        return 0
+
+    try:
+        start_dt = datetime.fromisoformat(
+            start_text.replace("Z", "+00:00")
+        )
+        end_dt = datetime.fromisoformat(
+            end_text.replace("Z", "+00:00")
+        )
+
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(
+                tzinfo=ZoneInfo("Asia/Shanghai")
+            )
+        if end_dt.tzinfo is None:
+            end_dt = end_dt.replace(
+                tzinfo=ZoneInfo("Asia/Shanghai")
+            )
+
+        minutes = (end_dt - start_dt).total_seconds() / 60
+        return max(0, round(minutes))
+    except (ValueError, TypeError):
+        return 0
+
+
 while True:
-    args = {"data_source_id": SOURCE_DATA_SOURCE_ID, "page_size": 100}
+    args = {
+        "data_source_id": SOURCE_DATA_SOURCE_ID,
+        "page_size": 100,
+    }
     if cursor:
         args["start_cursor"] = cursor
+
     result = notion.data_sources.query(**args)
+
     for page in result.get("results", []):
         props = page.get("properties", {})
-        info = props.get("开始时间", {}).get("date")
-        if not info or not info.get("start"):
+
+        start_info = props.get("开始时间", {}).get("date")
+        if not start_info or not start_info.get("start"):
             continue
+
+        start_text = start_info["start"]
+
         try:
-            day_text = info["start"][:10]
-            date.fromisoformat(day_text)
+            day_text = start_text[:10]
+            log_date = date.fromisoformat(day_text)
         except (ValueError, TypeError):
             continue
+
+        end_info = props.get("结束时间", {}).get("date")
+        end_text = (
+            end_info.get("start")
+            if end_info else None
+        )
+
         selected = props.get("类别", {}).get("select")
         category = selected.get("name") if selected else ""
+
+        # 书籍优先读取现有的阅读分钟公式；
+        # 其他类别根据开始、结束时间计算。
+        formula_minutes = get_formula_number(
+            props, "阅读分钟"
+        )
+
+        if category == "书籍" and formula_minutes > 0:
+            duration_minutes = round(formula_minutes)
+        else:
+            duration_minutes = get_duration_minutes(
+                start_text, end_text
+            )
+
         daily[day_text]["总计"] += 1
+
         if category in CATEGORIES:
             daily[day_text][category] += 1
+
+        all_logs.append({
+            "日期": log_date,
+            "类别": category,
+            "分钟": duration_minutes,
+            "有结束时间": bool(end_text),
+            "页面ID": page.get("id"),
+        })
+
     if not result.get("has_more"):
         break
+
     cursor = result.get("next_cursor")
+
+
+def get_log_stats(start_date=None, end_date=None, category=None):
+    """按时间范围和类别汇总日志次数、打卡天数、时长。"""
+    selected_logs = [
+        log for log in all_logs
+        if (start_date is None or log["日期"] >= start_date)
+        and (end_date is None or log["日期"] <= end_date)
+        and (category is None or log["类别"] == category)
+    ]
+
+    return {
+        "次数": len(selected_logs),
+        "天数": len({
+            log["日期"] for log in selected_logs
+        }),
+        "分钟": sum(
+            log["分钟"] for log in selected_logs
+        ),
+    }
 
 STYLE = r"""
 *{box-sizing:border-box}body{margin:0;padding:18px;background:#f7f8fa;color:#24292f;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
@@ -95,7 +204,17 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{colo
 .legend{display:flex;align-items:center;gap:4px;color:#57606a;font-size:11px;margin:14px 0 0}.legend-cell{display:inline-block;width:12px;height:12px;border-radius:3px}
 .weekday-row,.month-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.weekday-row{margin-bottom:7px;color:#57606a;font-size:12px;text-align:center}
 .month-day{position:relative;aspect-ratio:1;min-width:0;border-radius:5px;border:1px solid rgba(27,31,36,.06);display:flex;align-items:center;justify-content:center}
-.day-number{font-size:11px;color:#24292f;opacity:.85}.month-summary{font-size:12px;color:#57606a;margin:12px 0 0}footer{color:#57606a;font-size:12px;margin-top:18px}
+.day-number{font-size:11px;color:#24292f;opacity:.85}
+.month-summary{font-size:12px;color:#57606a;margin:12px 0 0}
+.month-stats{margin-top:16px;padding-top:12px;border-top:1px solid #eaeef2;display:flex;flex-direction:column;gap:9px;min-width:0}
+.month-stat-row{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;line-height:1.6}
+.month-stat-label{color:#57606a;white-space:nowrap}
+.month-stat-value{color:#24292f;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.year-stats{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 16px}
+.year-stat{display:flex;flex-direction:column;gap:4px;padding:9px 12px;background:#f6f8fa;border-radius:8px;min-width:105px}
+.year-stat span{font-size:12px;color:#57606a}
+.year-stat strong{font-size:16px;font-weight:600;color:#24292f}
+footer{color:#57606a;font-size:12px;margin-top:18px}
 """
 
 def write_heatmap_png(year, month, category, filename):
@@ -195,8 +314,9 @@ def write_heatmap_png(year, month, category, filename):
 
 
 
+
 def screenshot_html(html_file, png_file, is_monthly=False):
-    """按年度/月度布局截取热力图及指定的统计内容。"""
+    """保持原有横向视口，完整截取页面纵向内容。"""
     html_path = Path(html_file).resolve()
     png_path = Path(png_file)
     png_path.parent.mkdir(parents=True, exist_ok=True)
@@ -207,65 +327,33 @@ def screenshot_html(html_file, png_file, is_monthly=False):
             viewport={"width": 1600, "height": 1200},
             device_scale_factor=2,
         )
+
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
-        dimensions = page.evaluate("""(isMonthly) => {
-            const title = document.querySelector('body > h1');
-            const summary = document.querySelector('body > .summary');
-            const panel = document.querySelector('body > section.panel');
-            const footer = document.querySelector('body > footer');
-
-            if (!panel) {
-                return {
-                    width: document.documentElement.scrollWidth,
-                    height: document.documentElement.scrollHeight
-                };
-            }
-
-            const panelRect = panel.getBoundingClientRect();
-            const titleRect = title?.getBoundingClientRect();
-            const summaryRect = summary?.getBoundingClientRect();
-
-            // 年度图需要标题、说明、全年热力图和图例。
-            // 月度图需要标题、说明、日历热力图和底部统计。
-            const targets = [
-                panel,
-                title,
-                summary,
-                panel.querySelector('.scroll'),
-                panel.querySelector('.heatmap'),
-                panel.querySelector('.month-grid'),
-                panel.querySelector('.legend'),
-                panel.querySelector('.month-summary'),
-                panel.querySelector('.weekday-row')
-            ].filter(Boolean);
-
-            const rects = targets.map(el => el.getBoundingClientRect());
-
-            const right = Math.max(...rects.map(r => r.right));
-            const bottom = Math.max(...rects.map(r => r.bottom));
-
-            // 年度图的横向内容以热力图和图例为准；
-            // 月度图的横向内容以日历面板为准。
-            return {
-                width: Math.ceil(right + 24),
-                height: Math.ceil(bottom + 24)
-            };
-        }""", is_monthly)
+        # 不根据标题、说明文字或视口宽度计算截图宽度。
+        # 仅读取页面内容的实际纵向高度。
+        height = page.evaluate("""() => {
+            return Math.ceil(Math.max(
+                document.body.scrollHeight,
+                document.documentElement.scrollHeight
+            ));
+        }""")
 
         page.set_viewport_size({
-            "width": max(dimensions["width"], 800),
-            "height": max(dimensions["height"], 300),
+            "width": 1600,
+            "height": max(height, 300),
         })
 
-        # 等待视口调整后重新计算布局，再按完整页面截图。
         page.evaluate("document.fonts.ready")
+
         page.screenshot(
             path=str(png_path),
-            full_page=True,
+            full_page=False,
         )
+
         browser.close()
+
 
 
 
@@ -317,52 +405,190 @@ def make_year(year):
     first, last = date(year, 1, 1), date(year, 12, 31)
     start = first - timedelta(days=(first.weekday() + 1) % 7)
     end = last + timedelta(days=(5 - last.weekday()) % 7)
+
     dates, current = [], start
     while current <= end:
         dates.append(current)
         current += timedelta(days=1)
+
     weeks = len(dates) // 7
     cells = []
+
+    year_records = 0
+    active_days = 0
+    category_totals = {c: 0 for c in CATEGORIES}
+
     for day in dates:
         if day.year != year:
             cells.append('<span class="cell outside"></span>')
             continue
+
         counts = daily.get(day.isoformat(), {})
         count = counts.get("总计", 0)
-        detail = "；".join(f"{c} {counts.get(c, 0)} 次" for c in CATEGORIES)
-        tip = html.escape(f"{day.isoformat()}｜总计 {count} 次｜{detail}", quote=True)
-        cells.append(f'<span class="cell" style="background:{TOTAL_COLORS[min(count, len(TOTAL_COLORS)-1)]}" title="{tip}"></span>')
+
+        year_records += count
+        if count > 0:
+            active_days += 1
+
+        for c in CATEGORIES:
+            category_totals[c] += counts.get(c, 0)
+
+        detail = "；".join(
+            f"{c} {counts.get(c, 0)} 次" for c in CATEGORIES
+        )
+        tip = html.escape(
+            f"{day.isoformat()}｜总计 {count} 次｜{detail}",
+            quote=True
+        )
+        cells.append(
+            f'<span class="cell" '
+            f'style="background:{TOTAL_COLORS[min(count, len(TOTAL_COLORS)-1)]}" '
+            f'title="{tip}"></span>'
+        )
+
     labels = []
     for m in range(1, 13):
         md = date(year, m, 1)
         col = (md - start).days // 7 + 1
         labels.append(f'<span style="grid-column:{col}">{m}月</span>')
-    legend = ''.join(
-    f'<span class="legend-cell" style="background:{TOTAL_COLORS[i]}"></span>'
-    for i in range(len(TOTAL_COLORS))
-    )
-    section = f'<section class="panel"><h2>{year} 年总打卡 · 全年</h2><div class="scroll"><div class="month-labels" style="grid-template-columns:repeat({weeks},13px)">{"".join(labels)}</div><div class="heatmap" style="grid-template-columns:repeat({weeks},13px)">{"".join(cells)}</div></div><p class="legend">少 ← {legend} → 多</p></section>'
-    return f'<h1>{year} 年总打卡热力图</h1><div class="summary">年度总打卡记录；悬停方格可查看当天各类别详情。</div>{section}'
 
+    legend = ''.join(
+        f'<span class="legend-cell" style="background:{TOTAL_COLORS[i]}"></span>'
+        for i in range(len(TOTAL_COLORS))
+    )
+
+    stats = (
+        f'<div class="year-stats">'
+        f'<div class="year-stat"><span>全年总打卡</span>'
+        f'<strong>{year_records} 次</strong></div>'
+        f'<div class="year-stat"><span>打卡天数</span>'
+        f'<strong>{active_days} 天</strong></div>'
+        + ''.join(
+            f'<div class="year-stat"><span>{c}打卡</span>'
+            f'<strong>{category_totals[c]} 次</strong></div>'
+            for c in CATEGORIES
+        )
+        + '</div>'
+    )
+
+    section = (
+        f'<section class="panel">'
+        f'<h2>{year} 年总打卡 · 全年</h2>'
+        f'{stats}'
+        f'<div class="scroll">'
+        f'<div class="month-labels" style="grid-template-columns:repeat({weeks},13px)">'
+        f'{"".join(labels)}</div>'
+        f'<div class="heatmap" style="grid-template-columns:repeat({weeks},13px)">'
+        f'{"".join(cells)}</div>'
+        f'</div>'
+        f'<p class="legend">少 ← {legend} → 多</p>'
+        f'</section>'
+    )
+
+    return (
+        f'<h1>{year} 年总打卡热力图</h1>'
+        f'<div class="summary">年度总打卡记录；悬停方格可查看当天各类别详情。</div>'
+        f'{section}'
+    )
 def make_month(year, month, category):
     first = date(year, month, 1)
     days = monthrange(year, month)[1]
-    cells = ['<span class="cell outside"></span>' for _ in range(first.weekday())]
-    total = 0
+
+    cells = [
+        '<span class="cell outside"></span>'
+        for _ in range(first.weekday())
+    ]
+
     for n in range(1, days + 1):
         day = date(year, month, n)
         counts = daily.get(day.isoformat(), {})
         count = counts.get(category, 0)
-        total += count
-        tip = html.escape(f"{day.isoformat()}｜{category} {count} 次｜当天总计 {counts.get('总计',0)} 次", quote=True)
+
+        tip = html.escape(
+            f"{day.isoformat()}｜{category} {count} 次"
+            f"｜当天总计 {counts.get('总计', 0)} 次",
+            quote=True
+        )
+
         colors = CATEGORY_COLORS[category]
-        cells.append(f'<span class="month-day" style="background:{colors[min(count, len(colors)-1)]}" title="{tip}"><span class="day-number">{n}</span></span>')
+        cells.append(
+            f'<span class="month-day" '
+            f'style="background:{colors[min(count, len(colors)-1)]}" '
+            f'title="{tip}">'
+            f'<span class="day-number">{n}</span>'
+            f'</span>'
+        )
+
     while len(cells) % 7:
         cells.append('<span class="cell outside"></span>')
-    section = f'<section class="panel"><h2>{html.escape(category)} · {year}年{month}月</h2><div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="month-grid">{"".join(cells)}</div><p class="month-summary">本月打卡：{total} 次</p></section>'
-    return f'<h1>{html.escape(category)}打卡热力图</h1><div class="summary">{year}年{month}月历史记录；悬停方格可查看当天详情。</div>{section}'
 
+    today = TODAY
+    month_start = date(year, month, 1)
+    month_end = date(year, month, days)
 
+    all_time = get_log_stats(category=category)
+
+    year_stats = get_log_stats(
+        start_date=date(year, 1, 1),
+        end_date=min(date(year, 12, 31), today),
+        category=category,
+    )
+
+    effective_month_end = (
+        min(month_end, today)
+        if year == today.year and month == today.month
+        else month_end
+    )
+
+    month_stats = get_log_stats(
+        start_date=month_start,
+        end_date=effective_month_end,
+        category=category,
+    )
+
+    def format_duration(minutes):
+        hours, mins = divmod(int(minutes), 60)
+        return f"{hours}小时{mins}分钟"
+
+    def stats_row(label, data):
+        duration = format_duration(data["分钟"])
+
+        return (
+            '<div class="month-stat-row">'
+            f'<span class="month-stat-label">{label}</span>'
+            f'<span class="month-stat-value">'
+            f'{duration} · {data["天数"]}天 · {data["次数"]}次'
+            '</span>'
+            '</div>'
+        )
+
+    stats_html = (
+        '<div class="month-stats">'
+        + stats_row("至今累计", all_time)
+        + stats_row(f"{year}年累计", year_stats)
+        + stats_row(f"{month}月累计", month_stats)
+        + '</div>'
+    )
+
+    section = (
+        '<section class="panel">'
+        f'<h2>{html.escape(category)} · {year}年{month}月</h2>'
+        '<div class="weekday-row">'
+        '<span>一</span><span>二</span><span>三</span>'
+        '<span>四</span><span>五</span><span>六</span><span>日</span>'
+        '</div>'
+        f'<div class="month-grid">{"".join(cells)}</div>'
+        f'{stats_html}'
+        '</section>'
+    )
+
+    return (
+        f'<h1>{html.escape(category)}打卡热力图</h1>'
+        f'<div class="summary">'
+        f'{year}年{month}月历史记录；悬停方格可查看当天详情。'
+        '</div>'
+        f'{section}'
+    )
 def get_archive_records():
     records = []
     archive_data_source_id = get_archive_data_source_id()
