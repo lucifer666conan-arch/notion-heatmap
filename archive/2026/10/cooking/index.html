@@ -12,12 +12,77 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{colo
 .day-number{font-size:11px;color:#24292f;opacity:.85}
 .month-summary{font-size:12px;color:#57606a;margin:12px 0 0}
 .month-stats{margin-top:16px;padding-top:12px;border-top:1px solid #eaeef2;display:flex;flex-direction:column;gap:9px;min-width:0}
-.month-stat-row{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;line-height:1.6}
-.month-stat-label{color:#57606a;white-space:nowrap}
-.month-stat-value{color:#24292f;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-.year-stats{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 16px}
-.year-stat{display:flex;flex-direction:column;gap:4px;padding:9px 12px;background:#f6f8fa;border-radius:8px;min-width:105px}
-.year-stat span{font-size:12px;color:#57606a}
-.year-stat strong{font-size:16px;font-weight:600;color:#24292f}
+
+.month-stat-row{
+  display:grid;
+  grid-template-columns:150px minmax(0,1fr);
+  align-items:start;
+  column-gap:24px;
+  font-size:12px;
+  line-height:1.6;
+  min-width:0;
+}
+.month-stat-label{
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:600;
+}
+.month-stat-values{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  min-width:0;
+  font-variant-numeric:tabular-nums;
+}
+.month-stat-primary{
+  font-size:13px;
+  font-weight:600;
+  line-height:1.6;
+  overflow-wrap:anywhere;
+}
+.month-stat-secondary{
+  font-size:11px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+.year-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:0 0 16px;
+  min-width:0;
+}
+.year-stat{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:10px 12px;
+  background:#f6f8fa;
+  border-radius:8px;
+  min-width:0;
+}
+.year-stat span{
+  font-size:12px;
+  line-height:1.5;
+  color:#57606a;
+  overflow-wrap:anywhere;
+}
+.year-stat strong{
+  font-size:16px;
+  line-height:1.5;
+  font-weight:600;
+  color:#24292f;
+  overflow-wrap:anywhere;
+}
+.year-stat .stat-main{
+  font-size:16px;
+  font-weight:600;
+}
+.year-stat .stat-secondary{
+  font-size:12px;
+  font-weight:500;
+}
 footer{color:#57606a;font-size:12px;margin-top:18px}
-</style></head><body><h1>做饭打卡热力图</h1><div class="summary">2026年10月历史记录；悬停方格可查看当天详情。</div><section class="panel"><h2>做饭 · 2026年10月</h2><div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="month-grid"><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="month-day" style="background:#FFFFFF" title="2026-10-01｜做饭 0 次｜当天总计 0 次"><span class="day-number">1</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-02｜做饭 0 次｜当天总计 0 次"><span class="day-number">2</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-03｜做饭 0 次｜当天总计 0 次"><span class="day-number">3</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-04｜做饭 0 次｜当天总计 0 次"><span class="day-number">4</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-05｜做饭 0 次｜当天总计 0 次"><span class="day-number">5</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-06｜做饭 0 次｜当天总计 0 次"><span class="day-number">6</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-07｜做饭 0 次｜当天总计 0 次"><span class="day-number">7</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-08｜做饭 0 次｜当天总计 0 次"><span class="day-number">8</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-09｜做饭 0 次｜当天总计 0 次"><span class="day-number">9</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-10｜做饭 0 次｜当天总计 0 次"><span class="day-number">10</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-11｜做饭 0 次｜当天总计 0 次"><span class="day-number">11</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-12｜做饭 0 次｜当天总计 0 次"><span class="day-number">12</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-13｜做饭 0 次｜当天总计 0 次"><span class="day-number">13</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-14｜做饭 0 次｜当天总计 0 次"><span class="day-number">14</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-15｜做饭 0 次｜当天总计 0 次"><span class="day-number">15</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-16｜做饭 0 次｜当天总计 0 次"><span class="day-number">16</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-17｜做饭 0 次｜当天总计 2 次"><span class="day-number">17</span></span><span class="month-day" style="background:#FFF9D9" title="2026-10-18｜做饭 1 次｜当天总计 6 次"><span class="day-number">18</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-19｜做饭 0 次｜当天总计 6 次"><span class="day-number">19</span></span><span class="month-day" style="background:#FFF9D9" title="2026-10-20｜做饭 1 次｜当天总计 5 次"><span class="day-number">20</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-21｜做饭 0 次｜当天总计 3 次"><span class="day-number">21</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-22｜做饭 0 次｜当天总计 5 次"><span class="day-number">22</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-23｜做饭 0 次｜当天总计 1 次"><span class="day-number">23</span></span><span class="month-day" style="background:#FFF9D9" title="2026-10-24｜做饭 1 次｜当天总计 8 次"><span class="day-number">24</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-25｜做饭 0 次｜当天总计 5 次"><span class="day-number">25</span></span><span class="month-day" style="background:#FFF0A3" title="2026-10-26｜做饭 2 次｜当天总计 8 次"><span class="day-number">26</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-27｜做饭 0 次｜当天总计 0 次"><span class="day-number">27</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-28｜做饭 0 次｜当天总计 0 次"><span class="day-number">28</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-29｜做饭 0 次｜当天总计 0 次"><span class="day-number">29</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-30｜做饭 0 次｜当天总计 0 次"><span class="day-number">30</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-31｜做饭 0 次｜当天总计 0 次"><span class="day-number">31</span></span><span class="cell outside"></span></div><div class="month-stats"><div class="month-stat-row"><span class="month-stat-label">至今累计</span><span class="month-stat-value">2小时21分钟 · 4天 · 5次</span></div><div class="month-stat-row"><span class="month-stat-label">2026年累计</span><span class="month-stat-value">2小时21分钟 · 4天 · 5次</span></div><div class="month-stat-row"><span class="month-stat-label">10月累计</span><span class="month-stat-value">2小时21分钟 · 4天 · 5次</span></div></div></section><footer>历史热力图档案 · 按归档时的 Notion 打卡数据生成</footer></body></html>
+</style></head><body><h1>做饭打卡热力图</h1><div class="summary">2026年10月历史记录；悬停方格可查看当天详情。</div><section class="panel"><h2>做饭 · 2026年10月</h2><div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="month-grid"><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="month-day" style="background:#FFFFFF" title="2026-10-01｜做饭 0 次｜当天总计 0 次"><span class="day-number">1</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-02｜做饭 0 次｜当天总计 0 次"><span class="day-number">2</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-03｜做饭 0 次｜当天总计 0 次"><span class="day-number">3</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-04｜做饭 0 次｜当天总计 0 次"><span class="day-number">4</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-05｜做饭 0 次｜当天总计 0 次"><span class="day-number">5</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-06｜做饭 0 次｜当天总计 0 次"><span class="day-number">6</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-07｜做饭 0 次｜当天总计 0 次"><span class="day-number">7</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-08｜做饭 0 次｜当天总计 0 次"><span class="day-number">8</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-09｜做饭 0 次｜当天总计 0 次"><span class="day-number">9</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-10｜做饭 0 次｜当天总计 0 次"><span class="day-number">10</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-11｜做饭 0 次｜当天总计 0 次"><span class="day-number">11</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-12｜做饭 0 次｜当天总计 0 次"><span class="day-number">12</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-13｜做饭 0 次｜当天总计 0 次"><span class="day-number">13</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-14｜做饭 0 次｜当天总计 0 次"><span class="day-number">14</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-15｜做饭 0 次｜当天总计 0 次"><span class="day-number">15</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-16｜做饭 0 次｜当天总计 0 次"><span class="day-number">16</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-17｜做饭 0 次｜当天总计 2 次"><span class="day-number">17</span></span><span class="month-day" style="background:#FFF9D9" title="2026-10-18｜做饭 1 次｜当天总计 6 次"><span class="day-number">18</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-19｜做饭 0 次｜当天总计 6 次"><span class="day-number">19</span></span><span class="month-day" style="background:#FFF9D9" title="2026-10-20｜做饭 1 次｜当天总计 5 次"><span class="day-number">20</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-21｜做饭 0 次｜当天总计 3 次"><span class="day-number">21</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-22｜做饭 0 次｜当天总计 5 次"><span class="day-number">22</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-23｜做饭 0 次｜当天总计 1 次"><span class="day-number">23</span></span><span class="month-day" style="background:#FFF9D9" title="2026-10-24｜做饭 1 次｜当天总计 8 次"><span class="day-number">24</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-25｜做饭 0 次｜当天总计 5 次"><span class="day-number">25</span></span><span class="month-day" style="background:#FFF0A3" title="2026-10-26｜做饭 2 次｜当天总计 8 次"><span class="day-number">26</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-27｜做饭 0 次｜当天总计 0 次"><span class="day-number">27</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-28｜做饭 0 次｜当天总计 0 次"><span class="day-number">28</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-29｜做饭 0 次｜当天总计 0 次"><span class="day-number">29</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-30｜做饭 0 次｜当天总计 0 次"><span class="day-number">30</span></span><span class="month-day" style="background:#FFFFFF" title="2026-10-31｜做饭 0 次｜当天总计 0 次"><span class="day-number">31</span></span><span class="cell outside"></span></div><div class="month-stats"><div class="month-stat-row"><span class="month-stat-label" style="color:#CF7508">至今累计</span><div class="month-stat-values"><div class="month-stat-primary" style="color:#CF7508">0天2小时21分钟 · 4天 · 5次</div><div class="month-stat-secondary" style="color:#DDA85F">2小时21分钟 · 141分钟</div></div></div><div class="month-stat-row"><span class="month-stat-label" style="color:#CF7508">2026年累计</span><div class="month-stat-values"><div class="month-stat-primary" style="color:#CF7508">0天2小时21分钟 · 4天 · 5次</div><div class="month-stat-secondary" style="color:#DDA85F">2小时21分钟 · 141分钟</div></div></div><div class="month-stat-row"><span class="month-stat-label" style="color:#CF7508">10月累计</span><div class="month-stat-values"><div class="month-stat-primary" style="color:#CF7508">0天2小时21分钟 · 4天 · 5次</div><div class="month-stat-secondary" style="color:#DDA85F">2小时21分钟 · 141分钟</div></div></div></div></section><footer>历史热力图档案 · 按归档时的 Notion 打卡数据生成</footer></body></html>
