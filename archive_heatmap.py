@@ -318,13 +318,78 @@ h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{colo
 .day-number{font-size:11px;color:#24292f;opacity:.85}
 .month-summary{font-size:12px;color:#57606a;margin:12px 0 0}
 .month-stats{margin-top:16px;padding-top:12px;border-top:1px solid #eaeef2;display:flex;flex-direction:column;gap:9px;min-width:0}
-.month-stat-row{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;line-height:1.6}
-.month-stat-label{color:#57606a;white-space:nowrap}
-.month-stat-value{color:#24292f;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
-.year-stats{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 16px}
-.year-stat{display:flex;flex-direction:column;gap:4px;padding:9px 12px;background:#f6f8fa;border-radius:8px;min-width:105px}
-.year-stat span{font-size:12px;color:#57606a}
-.year-stat strong{font-size:16px;font-weight:600;color:#24292f}
+
+.month-stat-row{
+  display:grid;
+  grid-template-columns:150px minmax(0,1fr);
+  align-items:start;
+  column-gap:24px;
+  font-size:12px;
+  line-height:1.6;
+  min-width:0;
+}
+.month-stat-label{
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:600;
+}
+.month-stat-values{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  min-width:0;
+  font-variant-numeric:tabular-nums;
+}
+.month-stat-primary{
+  font-size:13px;
+  font-weight:600;
+  line-height:1.6;
+  overflow-wrap:anywhere;
+}
+.month-stat-secondary{
+  font-size:11px;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+
+.year-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  margin:0 0 16px;
+  min-width:0;
+}
+.year-stat{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  padding:10px 12px;
+  background:#f6f8fa;
+  border-radius:8px;
+  min-width:0;
+}
+.year-stat span{
+  font-size:12px;
+  line-height:1.5;
+  color:#57606a;
+  overflow-wrap:anywhere;
+}
+.year-stat strong{
+  font-size:16px;
+  line-height:1.5;
+  font-weight:600;
+  color:#24292f;
+  overflow-wrap:anywhere;
+}
+.year-stat .stat-main{
+  font-size:16px;
+  font-weight:600;
+}
+.year-stat .stat-secondary{
+  font-size:12px;
+  font-weight:500;
+}
 footer{color:#57606a;font-size:12px;margin-top:18px}
 """
 
@@ -602,17 +667,24 @@ def make_year(year):
             for c in CATEGORIES
         )
        
+        
         + ''.join(
-            f'<div class="year-stat"><span>{label}完成</span>'
-            f'<strong>{completion_totals[key]}{unit}</strong></div>'
-            f'<div class="year-stat"><span>{year}年{label}完成</span>'
-            f'<strong>{completion_yearly[key].get(year, 0)}{unit}</strong></div>'
-            for key, label, unit in [
-                ("阅读", "阅读", "本"),
-                ("观看", "观看", "部"),
-                ("游戏", "游戏", "个"),
+            f'<div class="year-stat">'
+            f'<span style="color:{main_color}">{label}完成</span>'
+            f'<strong class="stat-main" style="color:{main_color}">'
+            f'{completion_totals[key]}{unit}</strong>'
+            f'<span class="stat-secondary" style="color:{light_color}">'
+            f'{year}年{label}完成</span>'
+            f'<strong class="stat-secondary" style="color:{light_color}">'
+            f'{completion_yearly[key].get(year, 0)}{unit}</strong>'
+            f'</div>'
+            for key, label, unit, main_color, light_color in [
+                ("阅读", "📚 阅读", "本", "#268A48", "#76B58A"),
+                ("观看", "🎬 观看", "部", "#7038C8", "#A58AD9"),
+                ("游戏", "🎮 游戏", "个", "#2169BF", "#80A8D9"),
             ]
         )
+
 
         + '</div>'
     )
@@ -697,17 +769,49 @@ def make_month(year, month, category):
         hours, mins = divmod(int(minutes), 60)
         return f"{hours}小时{mins}分钟"
 
+    
+    
     def stats_row(label, data):
-        duration = format_duration(data["分钟"])
+        total_minutes = data["分钟"]
+        duration = format_duration(total_minutes)
+
+        days_part = total_minutes // 1440
+        remaining_minutes = total_minutes % 1440
+        hours_part = remaining_minutes // 60
+        minutes_part = remaining_minutes % 60
+
+        long_duration = (
+            f'{days_part}天{hours_part}小时{minutes_part}分钟'
+        )
+
+        category_colors = {
+            "书籍": ("#268A48", "#76B58A"),
+            "影视": ("#7038C8", "#A58AD9"),
+            "游戏": ("#2169BF", "#80A8D9"),
+            "做饭": ("#CF7508", "#DDA85F"),
+            "厨具": ("#B52667", "#D78AAE"),
+        }
+        main_color, light_color = category_colors.get(
+            category, ("#24292f", "#8b949e")
+        )
 
         return (
             '<div class="month-stat-row">'
-            f'<span class="month-stat-label">{label}</span>'
-            f'<span class="month-stat-value">'
-            f'{duration} · {data["天数"]}天 · {data["次数"]}次'
-            '</span>'
+            f'<span class="month-stat-label" '
+            f'style="color:{main_color}">{label}</span>'
+            '<div class="month-stat-values">'
+            f'<div class="month-stat-primary" '
+            f'style="color:{main_color}">'
+            f'{long_duration} · {data["天数"]}天 · {data["次数"]}次'
+            '</div>'
+            f'<div class="month-stat-secondary" '
+            f'style="color:{light_color}">'
+            f'{duration} · {total_minutes}分钟'
+            '</div>'
+            '</div>'
             '</div>'
         )
+
 
     stats_html = (
         '<div class="month-stats">'
