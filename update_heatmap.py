@@ -219,9 +219,29 @@ def format_hours_minutes(minutes):
     return f"{hours}小时{mins}分钟"
 
 
+
 def get_page_stats(database_id):
-    database = notion.databases.retrieve(database_id=database_id)
-    return database.get("properties", {})
+    """读取统计数据库中第一条统计记录的属性值。"""
+    result = notion.data_sources.query(
+        data_source_id=database_id,
+        page_size=100,
+    )
+
+    pages = result.get("results", [])
+
+    if not pages:
+        raise ValueError(
+            f"统计数据库 {database_id} 中没有记录，无法读取累计统计。"
+        )
+
+    if len(pages) > 1:
+        raise ValueError(
+            f"统计数据库 {database_id} 中有多条记录，"
+            "请先确认应该读取哪一条统计记录。"
+        )
+
+    return pages[0].get("properties", {})
+
 
 def make_category_stats(category):
     """生成分类热力图下方的至今、当年、当月统计。"""
