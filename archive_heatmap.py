@@ -540,12 +540,7 @@ def screenshot_html(html_file, png_file, is_monthly=False):
 
             return {
                 width: Math.ceil(rect.right + window.scrollX + 20),
-                height: Math.ceil(
-                    Math.max(
-                        rect.bottom + window.scrollY + 20,
-                        document.documentElement.scrollHeight
-                    )
-                )
+                height: Math.ceil(rect.bottom + window.scrollY + 40)
             };
         }""")
 
