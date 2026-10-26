@@ -1088,10 +1088,7 @@ for year in sorted(years):
             key = (kind, year, month)
             record_exists = key in record_map
 
-            # 历史月份已有档案时跳过；
-            # 当前月份每次运行都重新生成并更新。
-            if record_exists and not is_current_month:
-                continue
+             # 每次运行都重新生成有打卡记录的月份热力图，并更新归档。
 
             category_dir = (
                 f"archive/{year}/{month:02d}/"
