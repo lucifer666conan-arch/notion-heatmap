@@ -1,5 +1,7 @@
 import os
 import html
+import json
+import hashlib
 from pathlib import Path
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -50,13 +52,60 @@ CATEGORY_COLORS = {
     "厨具": ["#FFFFFF", "#FFE8F0", "#FFC9DD", "#FFA4C8", "#F77EAF", "#E85C98", "#D43D80", "#B52667", "#8C174D"]
 }
 TODAY = datetime.now(ZoneInfo("Asia/Shanghai")).date()
+# 历史热力图变化记录文件
+STATE_FILE = Path("archive_state.json")
 
+
+def load_archive_state():
+    """读取上次运行保存的历史热力图摘要。"""
+    if not STATE_FILE.exists():
+        return {}
+
+    try:
+        with STATE_FILE.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+    except (json.JSONDecodeError, OSError) as e:
+        print(f"读取归档状态失败，将重新检查历史归档：{e}")
+
+    return {}
+
+
+def save_archive_state(state):
+    """保存本次运行的历史热力图摘要。"""
+    temp_file = STATE_FILE.with_suffix(".json.tmp")
+
+    with temp_file.open("w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2, sort_keys=True)
+
+    temp_file.replace(STATE_FILE)
+
+
+def make_data_hash(data):
+    """为数据生成稳定的 SHA-256 摘要，用于比较前后变化。"""
+    content = json.dumps(
+        data,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
 if not TOKEN:
     raise SystemExit("缺少 NOTION_TOKEN 环境变量")
 if not ARCHIVE_DATABASE_ID:
     raise SystemExit("缺少 NOTION_ARCHIVE_DATABASE_ID 环境变量")
 notion = Client(auth=TOKEN)
+# 读取历史热力图状态
+archive_state = load_archive_state()
+new_archive_state = dict(archive_state)
 
+# 首次运行时全面检查历史归档
+first_state_run = not bool(archive_state)
+
+# 统计本次更新数量
+updated_archive_count = 0
 
 # 三个内容数据库：完成计数属性与结束日期属性
 COMPLETION_DATABASES = {
@@ -303,6 +352,48 @@ def get_log_stats(start_date=None, end_date=None, category=None):
             log["分钟"] for log in selected_logs
         ),
     }
+
+def make_month_archive_hash(year, month, category):
+    """计算月度档案摘要，包含热力图数据及页面展示的累计统计。"""
+
+    category_logs = [
+        {
+            "日期": log["日期"].isoformat(),
+            "分钟": log["分钟"],
+            "有结束时间": log["有结束时间"],
+            "页面ID": log["页面ID"],
+        }
+        for log in all_logs
+        if log["类别"] == category
+    ]
+
+    # 固定记录顺序，避免 Notion 返回顺序变化造成误判。
+    category_logs.sort(
+        key=lambda item: (
+            item["日期"],
+            item["页面ID"] or "",
+        )
+    )
+
+    year_logs = [
+        log for log in category_logs
+        if date.fromisoformat(log["日期"]).year == year
+    ]
+
+    month_logs = [
+        log for log in category_logs
+        if date.fromisoformat(log["日期"]).year == year
+        and date.fromisoformat(log["日期"]).month == month
+    ]
+
+    return make_data_hash({
+        "类别": category,
+        "年份": year,
+        "月份": month,
+        "至今累计": category_logs,
+        "年度累计": year_logs,
+        "月度记录": month_logs,
+    })
 
 STYLE = r"""
 *{box-sizing:border-box}body{margin:0;padding:18px;background:#f7f8fa;color:#24292f;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
@@ -943,28 +1034,31 @@ def prop_value(page, name):
         return (p.get("select") or {}).get("name")
     return None
 
-def set_archive_record(record_map, title, kind, year, month, urls, preview_file=None):
-    # 历史月份和往年只创建一次；当前月份/当前年度允许随日常打卡更新。
+
+def set_archive_record(
+    record_map,
+    title,
+    kind,
+    year,
+    month,
+    urls,
+    preview_file=None,
+    force_update=False,
+):
+    # 年度档案：往年已有记录时不更新；当前年度照常更新。
+    # 月度档案：外层确认需要更新后，通过 force_update=True 更新。
     key = (kind, year, month)
     existing = record_map.get(key)
-
-    is_current = (
-        (kind == "年度" and year == TODAY.year)
-        or (
-            kind.endswith("月度")
-            and year == TODAY.year
-            and month == TODAY.month
-        )
-    )
-
-    if existing and not is_current:
-        return
 
     properties = {
         "名称": {"title": [{"text": {"content": title}}]},
         "档案类型": {"select": {"name": kind}},
         "年份": {"number": year},
-        "月份": {"number": month} if month is not None else {"number": None},
+        "月份": (
+            {"number": month}
+            if month is not None
+            else {"number": None}
+        ),
     }
 
     for name, url in urls.items():
@@ -972,10 +1066,17 @@ def set_archive_record(record_map, title, kind, year, month, urls, preview_file=
 
     if existing:
         page_id = existing["id"]
-        notion.pages.update(page_id=page_id, properties=properties)
+
+        if force_update or year == TODAY.year:
+            notion.pages.update(
+                page_id=page_id,
+                properties=properties,
+            )
     else:
         created = notion.pages.create(
-            parent={"data_source_id": get_archive_data_source_id()},
+            parent={
+                "data_source_id": get_archive_data_source_id()
+            },
             properties=properties,
         )
         page_id = created["id"]
@@ -1007,6 +1108,7 @@ def set_archive_record(record_map, title, kind, year, month, urls, preview_file=
         )
         response.raise_for_status()
         print(f"Heatmap preview attached: {preview_file}")
+
 record_map = {}
 for rec in get_archive_records():
     kind = prop_value(rec, "档案类型")
@@ -1088,23 +1190,53 @@ for year in sorted(years):
             key = (kind, year, month)
             record_exists = key in record_map
 
-             # 每次运行都重新生成有打卡记录的月份热力图，并更新归档。
-
             category_dir = (
                 f"archive/{year}/{month:02d}/"
                 f"{CATEGORY_PATHS[category]}"
             )
-            html_path = f"{category_dir}/index.html"
-            png_path = f"{category_dir}/heatmap.png"
+            html_path = Path(f"{category_dir}/index.html")
+            png_path = Path(f"{category_dir}/heatmap.png")
+
+            state_key = f"{year}-{month:02d}-{category}"
+            current_hash = make_month_archive_hash(
+                year, month, category
+            )
+            previous_hash = archive_state.get(state_key)
+
+            # 当前月份始终更新。
+            # 历史月份只有在首次运行、数据变化或归档缺失时才更新。
+            needs_update = (
+                is_current_month
+                or first_state_run
+                or previous_hash != current_hash
+                or not html_path.exists()
+                or not png_path.exists()
+                or not record_exists
+            )
+
+            if not needs_update:
+                new_archive_state[state_key] = current_hash
+                print(
+                    f"跳过未变化的历史热力图："
+                    f"{year}-{month:02d} {category}"
+                )
+                continue
+
+            print(
+                f"更新热力图：{year}-{month:02d} {category}"
+            )
 
             write_page(
                 f"{category} · {year}年{month}月（历史档案）",
                 make_month(year, month, category),
-                html_path,
+                str(html_path),
             )
 
-            # 使用月度截图参数生成 PNG 预览。
-            screenshot_html(html_path, png_path, is_monthly=True)
+            screenshot_html(
+                str(html_path),
+                str(png_path),
+                is_monthly=True,
+            )
 
             set_archive_record(
                 record_map,
@@ -1114,9 +1246,19 @@ for year in sorted(years):
                 month,
                 {
                     URL_PROPERTIES[category]:
-                        f"{BASE_URL}/{html_path}"
+                        f"{BASE_URL}/{category_dir}/index.html"
                 },
-                preview_file=png_path,
+                preview_file=str(png_path),
+                force_update=True,
             )
 
-print(f"历史热力图归档完成：处理 {len(years)} 个年份的数据。")
+            new_archive_state[state_key] = current_hash
+            updated_archive_count += 1
+
+# 所有年度和月度归档处理成功后，再统一保存状态。
+save_archive_state(new_archive_state)
+
+print(
+    f"历史热力图归档完成：处理 {len(years)} 个年份；"
+    f"本次重新生成 {updated_archive_count} 张月度热力图。"
+)
