@@ -1170,12 +1170,33 @@ for year in sorted(years):
         ),
     )
 
-    # 找出该年份有打卡数据的月份。
+
+
+    # 找出该年份有打卡数据的月份，
+    # 并保留归档状态中已有的月份。
     months = {
         date.fromisoformat(d).month
         for d in daily
         if date.fromisoformat(d).year == year
     }
+
+    for state_key in archive_state:
+        parts = state_key.split("-", 2)
+        if len(parts) != 3:
+            continue
+
+        try:
+            state_year = int(parts[0])
+            state_month = int(parts[1])
+        except ValueError:
+            continue
+
+        if (
+            state_year == year
+            and 1 <= state_month <= 12
+            and parts[2] in CATEGORIES
+        ):
+            months.add(state_month)
 
     if year == TODAY.year:
         months.add(TODAY.month)
@@ -1184,6 +1205,24 @@ for year in sorted(years):
         is_current_month = (
             year == TODAY.year and month == TODAY.month
         )
+        month_has_logs = any(
+            log["日期"].year == year
+            and log["日期"].month == month
+            for log in all_logs
+        )
+
+        month_state_key = f"{year}-{month:02d}-__month_status__"
+        previous_month_status = archive_state.get(month_state_key)
+        current_month_status = (
+            "has_logs" if month_has_logs else "empty"
+        )
+
+        empty_month_needs_refresh = (
+            not month_has_logs
+            and previous_month_status != "empty"
+        )
+
+        new_archive_state[month_state_key] = current_month_status
 
         for category in CATEGORIES:
             kind = MONTHLY_TYPES[category]
@@ -1207,6 +1246,7 @@ for year in sorted(years):
             # 历史月份只有在首次运行、数据变化或归档缺失时才更新。
             needs_update = (
                 is_current_month
+                or empty_month_needs_refresh
                 or first_state_run
                 or previous_hash != current_hash
                 or not html_path.exists()
