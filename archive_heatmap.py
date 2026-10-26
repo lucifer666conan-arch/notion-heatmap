@@ -88,7 +88,7 @@ STYLE = r"""
 *{box-sizing:border-box}body{margin:0;padding:18px;background:#f7f8fa;color:#24292f;font-family:"Segoe UI","Microsoft YaHei",sans-serif}
 h1{font-size:24px;margin:0 0 8px}h2{font-size:18px;margin:0 0 14px}.summary{color:#57606a;margin-bottom:18px;font-size:13px}
 .panel{width:fit-content;background:white;border:1px solid #d8dee4;border-radius:12px;padding:16px;margin:0}
-.scroll{width:max-content;overflow-x:auto;padding:2px 2px 8px}
+.scroll{width:max-content;overflow:visible;padding:2px 2px 8px}
 .month-labels{display:grid;height:30px;align-items:start;font-size:11px;line-height:16px;color:#57606a;column-gap:3px}
 .heatmap{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;gap:3px;width:max-content}
 .cell{width:13px;height:13px;border-radius:3px;border:1px solid rgba(27,31,36,.06)}.outside{background:transparent;border-color:transparent}
@@ -194,8 +194,9 @@ def write_heatmap_png(year, month, category, filename):
 
 
 
+
 def screenshot_html(html_file, png_file, is_monthly=False):
-    """截图热力图，自动裁掉上下及左右多余空白。"""
+    """截图热力图，根据实际内容计算截图尺寸。"""
     html_path = Path(html_file).resolve()
     png_path = Path(png_file)
     png_path.parent.mkdir(parents=True, exist_ok=True)
@@ -209,10 +210,11 @@ def screenshot_html(html_file, png_file, is_monthly=False):
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
-        dimensions = page.evaluate("""(isMonthly) => {
+        dimensions = page.evaluate("""() => {
             const title = document.querySelector('body > h1');
             const summary = document.querySelector('body > .summary');
             const panel = document.querySelector('body > section.panel');
+            const footer = document.querySelector('body > footer');
 
             if (!panel) {
                 return {
@@ -228,46 +230,43 @@ def screenshot_html(html_file, png_file, is_monthly=False):
             const summaryRect = summary
                 ? summary.getBoundingClientRect()
                 : panelRect;
-
-            const content = panel.querySelector('.scroll');
-            const legend = panel.querySelector('.legend');
-            const contentRect = content
-                ? content.getBoundingClientRect()
-                : panelRect;
-            const legendRect = legend
-                ? legend.getBoundingClientRect()
+            const footerRect = footer
+                ? footer.getBoundingClientRect()
                 : panelRect;
 
-           // 横向：以白色面板的右边界为准，额外保留约 10 个图片像素
-           const right = panelRect.right;
+            return {
+                width: Math.ceil(
+                    Math.max(
+                        panelRect.right,
+                        titleRect.right,
+                        summaryRect.right,
+                        footerRect.right,
+                        panelRect.left +
+                            (panel.querySelector(".scroll")?.scrollWidth || 0)
+                    ) + 30
+                ),
+                height: Math.ceil(
+                    Math.max(
+                        panelRect.bottom,
+                        titleRect.bottom,
+                        summaryRect.bottom,
+                        footerRect.bottom
+                    ) + 30
+                )
+            };
+        }""")
 
-            // 纵向：沿用之前成功的方式，保留标题、说明和整个面板
-            const bottom = Math.max(
-                panelRect.bottom,
-                titleRect.bottom,
-                summaryRect.bottom
-            );
-
-        return {
-           width: Math.ceil(right + (isMonthly ? 10 : 10)),
-           height: Math.ceil(bottom + 48)
-        };
-        }""", is_monthly)
-
-        viewport_width = (
-            min(max(dimensions["width"], 1), 3000)
-            if is_monthly
-            else min(max(dimensions["width"], 800), 3000)
-        )
+        viewport_width = max(dimensions["width"], 800)
+        viewport_height = max(dimensions["height"], 300)
 
         page.set_viewport_size({
             "width": viewport_width,
-            "height": min(max(dimensions["height"], 300), 3000),
-       })
+            "height": viewport_height,
+        })
 
         page.screenshot(
             path=str(png_path),
-            full_page=False,
+            full_page=True,
         )
         browser.close()
 
@@ -491,7 +490,7 @@ for year in sorted(years):
     year_record_exists = ("年度", year, None) in record_map
 
     # 年度档案逻辑保持不变。
-    if not year_record_exists or year == TODAY.year:
+    if True:
         write_page(
             f"{year} 年总打卡热力图（历史档案）",
             make_year(year),
@@ -538,7 +537,7 @@ for year in sorted(years):
 
             # 历史月份已有档案时不重复生成；
             # 当月档案每次运行都更新。
-            if record_exists and not is_current_month:
+            if False:
                 continue
 
             category_dir = (
