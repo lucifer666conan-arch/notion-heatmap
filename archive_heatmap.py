@@ -527,7 +527,6 @@ def screenshot_html(html_file, png_file, is_monthly=False):
 
         dimensions = page.evaluate("""() => {
             const body = document.body;
-            const doc = document.documentElement;
 
             let right = 0;
             let bottom = 0;
@@ -541,14 +540,8 @@ def screenshot_html(html_file, png_file, is_monthly=False):
             }
 
             return {
-                width: Math.ceil(Math.max(
-                    right + 24,
-                    body.scrollWidth > 1600 ? body.scrollWidth : 0
-                )),
-                height: Math.ceil(Math.max(
-                    bottom + 24,
-                    200
-                ))
+                width: Math.ceil(right + 8),
+                height: Math.ceil(bottom + 8)
             };
         }""")
 
@@ -804,14 +797,15 @@ def make_month(year, month, category):
         )
 
         category_colors = {
-            "书籍": ("#268A48", "#76B58A"),
-            "影视": ("#7038C8", "#A58AD9"),
-            "游戏": ("#2169BF", "#80A8D9"),
-            "做饭": ("#CF7508", "#DDA85F"),
-            "厨具": ("#B52667", "#D78AAE"),
+            "书籍": ("#268A48", "#65AD7D", "#A8D7B5"),
+            "影视": ("#7038C8", "#9B76D6", "#CBB8EA"),
+            "游戏": ("#2169BF", "#6598D3", "#A9C8EB"),
+            "做饭": ("#CF7508", "#DDA85F", "#F0D0A0"),
+            "厨具": ("#B52667", "#CE729C", "#E6B3CB"),
         }
-        main_color, light_color = category_colors.get(
-            category, ("#24292f", "#8b949e")
+        title_color, main_color, light_color = category_colors.get(
+            category,
+            ("#24292f", "#6e7781", "#a1a8b0")
         )
 
         return (
@@ -832,7 +826,7 @@ def make_month(year, month, category):
         )
 
 
-        stat_titles = {
+    stat_titles = {
         "书籍": ("📚 阅读统计", "#268A48"),
         "影视": ("📺 观影统计", "#7038C8"),
         "游戏": ("🕹️ 游戏统计", "#2169BF"),
@@ -869,10 +863,12 @@ def make_month(year, month, category):
     }
 
     labels = stat_labels[category]
+    stat_title, stat_title_color = stat_titles[category]
 
     stats_html = (
         f'<div class="month-stats">'
-        f'<div class="month-stats-title">{stat_titles[category]}</div>'
+        f'<div class="month-stats-title" '
+        f'style="color:{stat_title_color}">{stat_title}</div>'
         + stats_row(labels[0], all_time)
         + stats_row(labels[1], year_stats)
         + stats_row(labels[2], month_stats)
