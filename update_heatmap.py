@@ -219,73 +219,32 @@ def format_hours_minutes(minutes):
     return f"{hours}小时{mins}分钟"
 
 
+def build_all_category_stats():
+    """只读取一次日志，同时计算五个分类的至今、当年、当月统计。"""
 
-def get_page_stats(database_id):
-    """读取统计数据库中第一条统计记录的属性值。"""
-    result = notion.data_sources.query(
-        data_source_id=database_id,
-        page_size=100,
-    )
-
-    pages = result.get("results", [])
-
-    if not pages:
-        raise ValueError(
-            f"统计数据库 {database_id} 中没有记录，无法读取累计统计。"
-        )
-
-    if len(pages) > 1:
-        raise ValueError(
-            f"统计数据库 {database_id} 中有多条记录，"
-            "请先确认应该读取哪一条统计记录。"
-        )
-
-    return pages[0].get("properties", {})
-
-
-def make_category_stats(category):
-    """生成分类热力图下方的至今、当年、当月统计。"""
-    config = STATS_PAGES[category]
-    props = get_page_stats(config["id"])
-
-    def existing_value(key, fallback="0"):
-        value = read_notion_property(props.get(config[key]))
-        return value if value != "" else fallback
-
-    # 至今：直接读取统计首页中已计算好的累计值
-    all_time_duration = existing_value("day_length")
-    all_time_days = existing_value("days_display")
-    all_time_count = existing_value("count")
-    all_time_hours = existing_value("duration")
-    all_time_minutes = existing_value("minutes")
-
-    # 当年与当月：按日志开始时间筛选，使用结束时间计算时长
-    periods = {
-        "year": {
-            "label": f"{YEAR}年{config['label']}{config['icon']}",
-            "start": date(YEAR, 1, 1),
-            "end": date(YEAR + 1, 1, 1),
-        },
-        "month": {
-            "label": f"{MONTH}月{config['label']}{config['icon']}",
-            "start": date(YEAR, MONTH, 1),
-            "end": (
-                date(YEAR + 1, 1, 1)
-                if MONTH == 12
-                else date(YEAR, MONTH + 1, 1)
-            ),
-        },
+    stats = {
+        category: {
+            period: {
+                "minutes": 0,
+                "count": 0,
+                "days": set(),
+            }
+            for period in ("all", "year", "month")
+        }
+        for category in CATEGORIES
     }
 
-    stats = {}
-    for period_name, period in periods.items():
-        stats[period_name] = {
-            "minutes": 0,
-            "count": 0,
-            "days": set(),
-        }
+    year_start = date(YEAR, 1, 1)
+    next_year_start = date(YEAR + 1, 1, 1)
+    month_start = date(YEAR, MONTH, 1)
+
+    if MONTH == 12:
+        next_month_start = date(YEAR + 1, 1, 1)
+    else:
+        next_month_start = date(YEAR, MONTH + 1, 1)
 
     cursor = None
+
     while True:
         args = {
             "data_source_id": DATA_SOURCE_ID,
@@ -296,77 +255,115 @@ def make_category_stats(category):
 
         result = notion.data_sources.query(**args)
 
-        for page in result["results"]:
-            page_props = page.get("properties", {})
-            selected = page_props.get("类别", {}).get("select")
-            log_category = selected.get("name") if selected else ""
+        for page in result.get("results", []):
+            props = page.get("properties", {})
 
-            if log_category != category:
+            selected = props.get("类别", {}).get("select")
+            category = selected.get("name") if selected else ""
+
+            if category not in CATEGORIES:
                 continue
 
-            start_info = page_props.get("开始时间", {}).get("date")
-            end_info = page_props.get("结束时间", {}).get("date")
+            start_info = props.get("开始时间", {}).get("date")
+            end_info = props.get("结束时间", {}).get("date")
 
             if not start_info or not start_info.get("start"):
                 continue
             if not end_info or not end_info.get("start"):
                 continue
 
-            start_text = start_info["start"]
-            end_text = end_info["start"]
-
             try:
-                start_dt = datetime.fromisoformat(start_text.replace("Z", "+00:00"))
-                end_dt = datetime.fromisoformat(end_text.replace("Z", "+00:00"))
+                start_dt = datetime.fromisoformat(
+                    start_info["start"].replace("Z", "+00:00")
+                )
+                end_dt = datetime.fromisoformat(
+                    end_info["start"].replace("Z", "+00:00")
+                )
 
-                # 统一时区后计算实际分钟数
-                if start_dt.tzinfo is not None:
-                    start_dt = start_dt.astimezone(ZoneInfo("Asia/Shanghai"))
-                if end_dt.tzinfo is not None:
-                    end_dt = end_dt.astimezone(ZoneInfo("Asia/Shanghai"))
+                tz = ZoneInfo("Asia/Shanghai")
+
+                # 统一时区；兼容没有时区信息的日期。
+                if start_dt.tzinfo is None:
+                    start_dt = start_dt.replace(tzinfo=tz)
+                else:
+                    start_dt = start_dt.astimezone(tz)
+
+                if end_dt.tzinfo is None:
+                    end_dt = end_dt.replace(tzinfo=tz)
+                else:
+                    end_dt = end_dt.astimezone(tz)
 
                 start_day = start_dt.date()
+
                 duration_minutes = max(
-                    0, int((end_dt - start_dt).total_seconds() // 60)
+                    0,
+                    int((end_dt - start_dt).total_seconds() // 60),
                 )
+
             except (ValueError, TypeError):
                 continue
 
-            for period_name, period in periods.items():
-                if period["start"] <= start_day < period["end"]:
-                    stats[period_name]["minutes"] += duration_minutes
-                    stats[period_name]["count"] += 1
-                    stats[period_name]["days"].add(start_day)
+            # 所有历史记录
+            targets = ["all"]
+
+            # 当前年份
+            if year_start <= start_day < next_year_start:
+                targets.append("year")
+
+            # 当前月份
+            if month_start <= start_day < next_month_start:
+                targets.append("month")
+
+            for period in targets:
+                item = stats[category][period]
+                item["minutes"] += duration_minutes
+                item["count"] += 1
+                item["days"].add(start_day)
 
         if not result.get("has_more"):
             break
+
         cursor = result.get("next_cursor")
 
-    groups = [
+    return stats
+
+
+def make_category_stats(category, all_stats):
+    """生成分类热力图下方的至今、当年、当月统计。"""
+
+    config = STATS_PAGES[category]
+    category_stats = all_stats[category]
+
+    periods = [
         {
+            "key": "all",
             "label": f"至今{config['label']}{config['icon']}",
-            "duration": all_time_duration,
-            "days": all_time_days,
-            "count": all_time_count,
-            "hours": all_time_hours,
-            "minutes": all_time_minutes,
-        }
+        },
+        {
+            "key": "year",
+            "label": f"{YEAR}年{config['label']}{config['icon']}",
+        },
+        {
+            "key": "month",
+            "label": f"{MONTH}月{config['label']}{config['icon']}",
+        },
     ]
 
-    for period_name in ("year", "month"):
-        period_stats = stats[period_name]
-        minutes = period_stats["minutes"]
-        groups.append({
-            "label": periods[period_name]["label"],
+    rows = []
+
+    for index, period in enumerate(periods):
+        item = category_stats[period["key"]]
+        minutes = item["minutes"]
+
+        group = {
+            "label": period["label"],
             "duration": format_duration(minutes),
-            "days": f"{len(period_stats['days'])}天",
-            "count": f"{period_stats['count']}次",
+            "days": f"{len(item['days'])}天",
+            "count": f"{item['count']}次",
             "hours": format_hours_minutes(minutes),
             "minutes": f"{minutes}分钟",
-        })
+        }
 
-    rows = []
-    for index, group in enumerate(groups):
         rows.append(
             f'<div class="stat-row">'
             f'<div class="stat-label" style="color:{config["colors"][index]}">'
@@ -374,13 +371,13 @@ def make_category_stats(category):
             f'</div>'
             f'<div class="stat-values">'
             f'<div class="stat-main" style="color:{config["colors"][index]}">'
-            f'{html.escape(str(group["duration"]))} · '
-            f'{html.escape(str(group["days"]))} · '
-            f'{html.escape(str(group["count"]))}'
+            f'{html.escape(group["duration"])} · '
+            f'{html.escape(group["days"])} · '
+            f'{html.escape(group["count"])}'
             f'</div>'
             f'<div class="stat-sub" style="color:{config["light_colors"][index]}">'
-            f'{html.escape(str(group["hours"]))} · '
-            f'{html.escape(str(group["minutes"]))}'
+            f'{html.escape(group["hours"])} · '
+            f'{html.escape(group["minutes"])}'
             f'</div>'
             f'</div>'
             f'</div>'
@@ -392,6 +389,8 @@ def make_category_stats(category):
         f'{"".join(rows)}'
         f'</section>'
     )
+
+
 
 def total_color_for(count):
     return TOTAL_COLORS[min(count, len(TOTAL_COLORS) - 1)]
@@ -755,9 +754,14 @@ CATEGORY_PATHS = {
     "厨具": "kitchenware",
 }
 
+
+# 一次读取所有日志，供五个分类共用。
+all_category_stats = build_all_category_stats()
+
 for category in CATEGORIES:
     section = make_month_heatmap(category)
-    stats_section = make_category_stats(category)
+    stats_section = make_category_stats(category, all_category_stats)
+
     write_page(
         f"{category}打卡热力图",
         f'<h1>{html.escape(category)}打卡热力图</h1>'
