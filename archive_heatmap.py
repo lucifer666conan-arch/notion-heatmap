@@ -196,7 +196,7 @@ def write_heatmap_png(year, month, category, filename):
 
 
 def screenshot_html(html_file, png_file, is_monthly=False):
-    """截图热力图，根据实际内容计算截图尺寸。"""
+    """按年度/月度布局截取热力图及指定的统计内容。"""
     html_path = Path(html_file).resolve()
     png_path = Path(png_file)
     png_path.parent.mkdir(parents=True, exist_ok=True)
@@ -204,13 +204,13 @@ def screenshot_html(html_file, png_file, is_monthly=False):
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(
-            viewport={"width": 3000, "height": 1000},
+            viewport={"width": 1600, "height": 1200},
             device_scale_factor=2,
         )
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
-        dimensions = page.evaluate("""() => {
+        dimensions = page.evaluate("""(isMonthly) => {
             const title = document.querySelector('body > h1');
             const summary = document.querySelector('body > .summary');
             const panel = document.querySelector('body > section.panel');
@@ -224,46 +224,43 @@ def screenshot_html(html_file, png_file, is_monthly=False):
             }
 
             const panelRect = panel.getBoundingClientRect();
-            const titleRect = title
-                ? title.getBoundingClientRect()
-                : panelRect;
-            const summaryRect = summary
-                ? summary.getBoundingClientRect()
-                : panelRect;
-            const footerRect = footer
-                ? footer.getBoundingClientRect()
-                : panelRect;
+            const titleRect = title?.getBoundingClientRect();
+            const summaryRect = summary?.getBoundingClientRect();
 
+            // 年度图需要标题、说明、全年热力图和图例。
+            // 月度图需要标题、说明、日历热力图和底部统计。
+            const targets = [
+                panel,
+                title,
+                summary,
+                panel.querySelector('.scroll'),
+                panel.querySelector('.heatmap'),
+                panel.querySelector('.month-grid'),
+                panel.querySelector('.legend'),
+                panel.querySelector('.month-summary'),
+                panel.querySelector('.weekday-row')
+            ].filter(Boolean);
+
+            const rects = targets.map(el => el.getBoundingClientRect());
+
+            const right = Math.max(...rects.map(r => r.right));
+            const bottom = Math.max(...rects.map(r => r.bottom));
+
+            // 年度图的横向内容以热力图和图例为准；
+            // 月度图的横向内容以日历面板为准。
             return {
-                width: Math.ceil(
-                    Math.max(
-                        panelRect.right,
-                        titleRect.right,
-                        summaryRect.right,
-                        footerRect.right,
-                        panelRect.left +
-                            (panel.querySelector(".scroll")?.scrollWidth || 0)
-                    ) + 30
-                ),
-                height: Math.ceil(
-                    Math.max(
-                        panelRect.bottom,
-                        titleRect.bottom,
-                        summaryRect.bottom,
-                        footerRect.bottom
-                    ) + 30
-                )
+                width: Math.ceil(right + 24),
+                height: Math.ceil(bottom + 24)
             };
-        }""")
-
-        viewport_width = max(dimensions["width"], 800)
-        viewport_height = max(dimensions["height"], 300)
+        }""", is_monthly)
 
         page.set_viewport_size({
-            "width": viewport_width,
-            "height": viewport_height,
+            "width": max(dimensions["width"], 800),
+            "height": max(dimensions["height"], 300),
         })
 
+        # 等待视口调整后重新计算布局，再按完整页面截图。
+        page.evaluate("document.fonts.ready")
         page.screenshot(
             path=str(png_path),
             full_page=True,
