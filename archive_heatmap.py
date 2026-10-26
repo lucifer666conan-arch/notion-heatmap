@@ -1217,24 +1217,44 @@ for year in sorted(years):
         ):
             months.add(record_month)
 
+
     for month in sorted(months):
         is_current_month = (
             year == TODAY.year and month == TODAY.month
         )
 
-        month_state_key = f"{year}-{month:02d}-__month_status__"
-        new_archive_state[month_state_key] = "has_logs" if any(
+        month_has_logs = any(
             log["日期"].year == year
             and log["日期"].month == month
             for log in all_logs
-        ) else "empty"
+        )
+
+        month_state_key = f"{year}-{month:02d}-__month_status__"
+
+        if not month_has_logs:
+            new_archive_state[month_state_key] = "empty"
+
+            for category in CATEGORIES:
+                kind = MONTHLY_TYPES[category]
+                key = (kind, year, month)
+
+                if key in record_map:
+                    page_id = record_map[key]["id"]
+                    archive_empty_month_record(page_id)
+                    record_map.pop(key, None)
+
+                state_key = f"{year}-{month:02d}-{category}"
+                new_archive_state.pop(state_key, None)
+
+            continue
+
+        new_archive_state[month_state_key] = "has_logs"
 
         for category in CATEGORIES:
             kind = MONTHLY_TYPES[category]
             key = (kind, year, month)
             record_exists = key in record_map
 
-            # 只根据日志表中该月、该类别的实际记录判断。
             category_has_logs = any(
                 log["日期"].year == year
                 and log["日期"].month == month
@@ -1242,69 +1262,41 @@ for year in sorted(years):
                 for log in all_logs
             )
 
-
             state_key = f"{year}-{month:02d}-{category}"
 
             if not category_has_logs:
-                # 没有对应日志：将已有的月度归档移入 Notion 回收站。
                 if record_exists:
-                    page_id = record_map[key]["id"]
-                    print(
-                        f"准备移入回收站：{year}-{month:02d} "
-                        f"{category}，Notion 页面 ID：{page_id}"
-                    )
+                    archive_empty_month_record(record_map[key]["id"])
+                    record_map.pop(key, None)
 
-                    print(
-                        f"[检查模式] 暂不移入回收站："
-                        f"{year}-{month:02d} {category}"
-                    )
-
-                # 不再保留该类别的旧状态。
                 new_archive_state.pop(state_key, None)
                 continue
+
+            current_hash = make_month_archive_hash(
+                year, month, category
+            )
+            # 档案存在且摘要没有变化时，不重新生成。
+            if record_exists:
+                if archive_state.get(state_key) == current_hash:
+                    new_archive_state[state_key] = current_hash
+                    continue
+
 
             category_dir = (
                 f"archive/{year}/{month:02d}/"
                 f"{CATEGORY_PATHS[category]}"
             )
-            html_path = Path(f"{category_dir}/index.html")
-            png_path = Path(f"{category_dir}/heatmap.png")
-
-            current_hash = make_month_archive_hash(
-                year, month, category
-            )
-            previous_hash = archive_state.get(state_key)
-
-            needs_update = (
-                is_current_month
-                or first_state_run
-                or previous_hash != current_hash
-                or not html_path.exists()
-                or not png_path.exists()
-                or not record_exists
-            )
-
-            if not needs_update:
-                new_archive_state[state_key] = current_hash
-                print(
-                    f"跳过未变化的历史热力图："
-                    f"{year}-{month:02d} {category}"
-                )
-                continue
-
-            print(
-                f"更新热力图：{year}-{month:02d} {category}"
-            )
+            html_path = f"{category_dir}/index.html"
+            png_path = f"{category_dir}/heatmap.png"
 
             write_page(
                 f"{category} · {year}年{month}月（历史档案）",
                 make_month(year, month, category),
-                str(html_path),
+                html_path,
             )
-
             screenshot_html(
-                str(html_path),
-                str(png_path),
+                html_path,
+                png_path,
                 is_monthly=True,
             )
 
@@ -1316,11 +1308,22 @@ for year in sorted(years):
                 month,
                 {
                     URL_PROPERTIES[category]:
-                        f"{BASE_URL}/{category_dir}/index.html"
+                        f"{BASE_URL}/{html_path}"
                 },
-                preview_file=str(png_path),
+                preview_file=png_path,
                 force_update=True,
             )
+
+            # 新建档案后立即刷新内存中的映射，避免后续重复创建。
+            if key not in record_map:
+                for rec in get_archive_records():
+                    if (
+                        prop_value(rec, "档案类型") == kind
+                        and prop_value(rec, "年份") == year
+                        and prop_value(rec, "月份") == month
+                    ):
+                        record_map[key] = rec
+                        break
 
             new_archive_state[state_key] = current_hash
             updated_archive_count += 1
