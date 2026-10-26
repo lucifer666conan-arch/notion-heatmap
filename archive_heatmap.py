@@ -863,7 +863,7 @@ def make_month(year, month, category):
         "书籍": (
             "至今阅读📖",
             f"{year}年阅读📖",
-            "当月阅读📖",
+            f"{month}月阅读📖",
         ),
         "影视": (
             "至今观看🎞️",
