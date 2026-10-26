@@ -796,17 +796,26 @@ def make_month(year, month, category):
             f'{days_part}天{hours_part}小时{minutes_part}分钟'
         )
 
+        # 每个分类四档统计颜色；标题使用 stat_titles 中最深的颜色
         category_colors = {
-            "书籍": ("#268A48", "#65AD7D", "#C4E5CE"),
-            "影视": ("#7038C8", "#9B76D6", "#DFD2F3"),
-            "游戏": ("#2169BF", "#6598D3", "#C9DDF3"),
-            "做饭": ("#CF7508", "#DDA85F", "#F5DFBD"),
-            "厨具": ("#B52667", "#CE729C", "#EBC8D9"),
+            "书籍": ("#328A50", "#6CAF82", "#8CC6A0", "#B1D9BD"),
+            "影视": ("#7038C8", "#A17ADC", "#BDA0E7", "#D9C9F2"),
+            "游戏": ("#2169BF", "#6598D3", "#8DB5E4", "#BAD4F0"),
+            "做饭": ("#CF7508", "#DDA85F", "#E8C18A", "#F2DDBB"),
+            "厨具": ("#B52667", "#CE729C", "#DFA0BB", "#EBC8D9"),
         }
-        title_color, main_color, light_color = category_colors.get(
+
+        colors = category_colors.get(
             category,
-            ("#24292f", "#6e7781", "#a1a8b0")
+            ("#6e7781", "#a1a8b0", "#b1b8c0", "#c1c7ce")
         )
+
+        if label.startswith("至今"):
+            main_color, light_color = colors[0], colors[1]
+        elif label.startswith(f"{year}年"):
+            main_color, light_color = colors[1], colors[2]
+        else:
+            main_color, light_color = colors[2], colors[3]
 
         return (
             '<div class="month-stat-row">'
