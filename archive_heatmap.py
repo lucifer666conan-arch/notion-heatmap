@@ -57,6 +57,117 @@ if not ARCHIVE_DATABASE_ID:
     raise SystemExit("缺少 NOTION_ARCHIVE_DATABASE_ID 环境变量")
 notion = Client(auth=TOKEN)
 
+
+# 三个内容数据库：完成计数属性与结束日期属性
+COMPLETION_DATABASES = {
+    "阅读": {
+        "data_source_id": "1d145d2d-dce6-801c-aaba-000be2385582",
+        "property": "已读完计数",
+        "date_property": "结束日期",
+        "unit": "本",
+    },
+    "观看": {
+        "data_source_id": "2d345d2d-dce6-818e-a4fc-000bb97539f5",
+        "property": "已看完计数",
+        "date_property": "结束日期",
+        "unit": "部",
+    },
+    "游戏": {
+        "data_source_id": "eb545d2d-dce6-824d-a120-87c95c8ed2aa",
+        "property": "已通关计数",
+        "date_property": "结束日期",
+        "unit": "个",
+    },
+}
+
+
+def get_completion_stats(data_source_id, property_name, date_property):
+    """汇总完成总数，并按结束日期统计各年度完成数。"""
+    total = 0
+    yearly = defaultdict(int)
+    cursor = None
+
+    while True:
+        args = {
+            "data_source_id": data_source_id,
+            "page_size": 100,
+        }
+        if cursor:
+            args["start_cursor"] = cursor
+
+        result = notion.data_sources.query(**args)
+
+        for page in result.get("results", []):
+            props = page.get("properties", {})
+
+            # 读取完成计数公式
+            prop = props.get(property_name, {})
+            if prop.get("type") != "formula":
+                continue
+
+            formula = prop.get("formula", {})
+            if formula.get("type") != "number":
+                continue
+
+            value = formula.get("number") or 0
+            if value <= 0:
+                continue
+
+            # 总累计：汇总所有已完成记录
+            total += value
+
+            # 年度累计：按结束日期所属年份汇总
+            date_prop = props.get(date_property, {})
+            if date_prop.get("type") != "date":
+                continue
+
+            date_value = date_prop.get("date") or {}
+            end_date_text = date_value.get("start")
+
+            if not end_date_text:
+                continue
+
+            try:
+                end_date = date.fromisoformat(end_date_text[:10])
+            except (ValueError, TypeError):
+                continue
+
+            yearly[end_date.year] += value
+
+        if not result.get("has_more"):
+            break
+
+        cursor = result.get("next_cursor")
+
+    return int(total), {
+        year: int(count)
+        for year, count in yearly.items()
+    }
+
+
+# 分别保存总累计与各年度累计
+completion_totals = {}
+completion_yearly = {}
+
+for name, config in COMPLETION_DATABASES.items():
+    total, yearly = get_completion_stats(
+        config["data_source_id"],
+        config["property"],
+        config["date_property"],
+    )
+    completion_totals[name] = total
+    completion_yearly[name] = yearly
+
+print("完成总累计：", completion_totals)
+print(
+    "完成年度累计：",
+    {
+        name: dict(yearly)
+        for name, yearly in completion_yearly.items()
+    },
+)
+
+
 # 读取完整历史数据，按日期、类别、时长统计。
 daily = defaultdict(lambda: {
     "总计": 0,
@@ -315,8 +426,9 @@ def write_heatmap_png(year, month, category, filename):
 
 
 
+
 def screenshot_html(html_file, png_file, is_monthly=False):
-    """保持原有横向视口，完整截取页面纵向内容。"""
+    """按页面实际内容计算截图尺寸，减少右侧和下方空白。"""
     html_path = Path(html_file).resolve()
     png_path = Path(png_file)
     png_path.parent.mkdir(parents=True, exist_ok=True)
@@ -324,27 +436,47 @@ def screenshot_html(html_file, png_file, is_monthly=False):
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page(
-            viewport={"width": 1600, "height": 1200},
+            viewport={"width": 1600, "height": 900},
             device_scale_factor=2,
         )
 
         page.goto(html_path.as_uri(), wait_until="networkidle")
         page.evaluate("document.fonts.ready")
 
-        # 不根据标题、说明文字或视口宽度计算截图宽度。
-        # 仅读取页面内容的实际纵向高度。
-        height = page.evaluate("""() => {
-            return Math.ceil(Math.max(
-                document.body.scrollHeight,
-                document.documentElement.scrollHeight
-            ));
+        dimensions = page.evaluate("""() => {
+            const body = document.body;
+            const doc = document.documentElement;
+
+            let right = 0;
+            let bottom = 0;
+
+            for (const el of body.querySelectorAll('*')) {
+                const r = el.getBoundingClientRect();
+                if (r.width > 0 && r.height > 0) {
+                    right = Math.max(right, r.right + window.scrollX);
+                    bottom = Math.max(bottom, r.bottom + window.scrollY);
+                }
+            }
+
+            return {
+                width: Math.ceil(Math.max(
+                    right + 24,
+                    body.scrollWidth > 1600 ? body.scrollWidth : 0
+                )),
+                height: Math.ceil(Math.max(
+                    bottom + 24,
+                    200
+                ))
+            };
         }""")
 
-        page.set_viewport_size({
-            "width": 1600,
-            "height": max(height, 300),
-        })
+        width = max(400, min(dimensions["width"], 5000))
+        height = max(200, min(dimensions["height"], 12000))
 
+        page.set_viewport_size({
+            "width": width,
+            "height": height,
+        })
         page.evaluate("document.fonts.ready")
 
         page.screenshot(
@@ -457,8 +589,9 @@ def make_year(year):
         for i in range(len(TOTAL_COLORS))
     )
 
+   
     stats = (
-        f'<div class="year-stats">'
+        '<div class="year-stats">'
         f'<div class="year-stat"><span>全年总打卡</span>'
         f'<strong>{year_records} 次</strong></div>'
         f'<div class="year-stat"><span>打卡天数</span>'
@@ -468,8 +601,22 @@ def make_year(year):
             f'<strong>{category_totals[c]} 次</strong></div>'
             for c in CATEGORIES
         )
+       
+        + ''.join(
+            f'<div class="year-stat"><span>{label}完成</span>'
+            f'<strong>{completion_totals[key]}{unit}</strong></div>'
+            f'<div class="year-stat"><span>{year}年{label}完成</span>'
+            f'<strong>{completion_yearly[key].get(year, 0)}{unit}</strong></div>'
+            for key, label, unit in [
+                ("阅读", "阅读", "本"),
+                ("观看", "观看", "部"),
+                ("游戏", "游戏", "个"),
+            ]
+        )
+
         + '</div>'
     )
+
 
     section = (
         f'<section class="panel">'
