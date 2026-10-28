@@ -536,8 +536,21 @@ def write_heatmap_png(year, month, category, filename):
 
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
-    draw.text((margin, margin), title, fill="#242424")
-    draw.text((margin, margin + 23), heading, fill="#555555")
+
+    if month is None:
+        title_color = "#EA6A24"
+    else:
+        title_color = {
+            "书籍": "#269D59",
+            "影视": "#8057C8",
+            "游戏": "#2185DF",
+            "做饭": "#D6A000",
+            "厨具": "#E6539B",
+        }[category]
+
+    draw.text((margin, margin), title, fill=title_color)
+    draw.text((margin, margin + 23), heading, fill=title_color)
+
 
     # 月份标签。
     if month is None:
@@ -794,7 +807,7 @@ def make_year(year):
 
     section = (
         f'<section class="panel">'
-        f'<h2>{year} 年总打卡 · 全年</h2>'
+        f'<h2 style="color:#EA6A24">{year} 年总打卡 · 全年</h2>'
         f'{summary_html}'
         f'{stats}'
         f'<div class="scroll">'
@@ -808,7 +821,7 @@ def make_year(year):
     )
 
     return (
-        f'<h1>{year} 年总打卡热力图</h1>'
+        f'<h1 style="color:#EA6A24">{year} 年总打卡热力图</h1>'
         f'<div class="summary">年度总打卡记录；悬停方格可查看当天各类别详情。</div>'
         f'{section}'
     )
@@ -990,10 +1003,16 @@ def make_month(year, month, category):
         + stats_row(labels[2], month_stats)
         + '</div>'
     )
-
+    title_colors = {
+        "书籍": "#269D59",
+        "影视": "#8057C8",
+        "游戏": "#2185DF",
+        "做饭": "#D6A000",
+        "厨具": "#E6539B",
+    }
     section = (
         '<section class="panel">'
-        f'<h2>{html.escape(category)} · {year}年{month}月</h2>'
+        f'<h2 style="color:{title_colors[category]}">{html.escape(category)} · {year}年{month}月</h2>'
         '<div class="weekday-row">'
         '<span>一</span><span>二</span><span>三</span>'
         '<span>四</span><span>五</span><span>六</span><span>日</span>'
@@ -1004,7 +1023,7 @@ def make_month(year, month, category):
     )
 
     return (
-        f'<h1>{html.escape(category)}打卡热力图</h1>'
+        f'<h1 style="color:{title_colors[category]}">{html.escape(category)}打卡热力图</h1>'
         f'<div class="summary">'
         f'{year}年{month}月历史记录；悬停方格可查看当天详情。'
         '</div>'
