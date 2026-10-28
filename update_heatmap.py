@@ -529,7 +529,7 @@ def make_year_heatmap():
         for i in range(len(TOTAL_COLORS))
     )
     return f'''<section class="panel year-panel">
-      <h2>{YEAR} 年总打卡 · 全年</h2>
+      <h2 style="color:#EA6A24">{YEAR} 年总打卡 · 全年</h2>
       <div class="scroll year-scroll">
         <div class="month-labels" style="grid-template-columns:repeat({week_count},13px)">{''.join(month_labels)}</div>
         <div class="heatmap year-heatmap" style="grid-template-columns:repeat({week_count},13px)">{''.join(cells)}</div>
@@ -539,6 +539,13 @@ def make_year_heatmap():
 
 
 def make_month_heatmap(category):
+    title_color = {
+        "书籍": "#269D59",
+        "影视": "#8057C8",
+        "游戏": "#2185DF",
+        "做饭": "#D6A000",
+        "厨具": "#E6539B",
+    }[category]
     first = date(YEAR, MONTH, 1)
     days_in_month = monthrange(YEAR, MONTH)[1]
     # Monday-first monthly calendar: 7 columns, up to 6 rows
@@ -561,7 +568,7 @@ def make_month_heatmap(category):
         cells.append('<span class="cell outside"></span>')
 
     return f'''<section class="panel month-panel">
-      <h2>{html.escape(category)} · {YEAR}年{MONTH}月</h2>
+      <h2 style="color:{title_color}">{html.escape(category)} · {YEAR}年{MONTH}月</h2>
       <div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
       <div class="month-grid">{''.join(cells)}</div>
       <p class="month-summary">本月打卡：{month_total} 次</p>
@@ -741,7 +748,7 @@ for name, source in COMPLETION_SOURCES.items():
 completion_html += '</div>'
 write_page(
     f"{YEAR} 年总打卡热力图",
-    f'<h1>{YEAR} 年总打卡热力图</h1><div class="summary">年度记录数：{record_count} 条。悬停方格可查看每天各类别的打卡详情。</div>{completion_html}{year_section}',
+    f'<h1 style="color:#EA6A24">{YEAR} 年总打卡热力图</h1><div class="summary">年度记录数：{record_count} 条。悬停方格可查看每天各类别的打卡详情。</div>{completion_html}{year_section}',
     "index.html",
 )
 
@@ -759,12 +766,19 @@ CATEGORY_PATHS = {
 all_category_stats = build_all_category_stats()
 
 for category in CATEGORIES:
+    title_color = {
+        "书籍": "#269D59",
+        "影视": "#8057C8",
+        "游戏": "#2185DF",
+        "做饭": "#D6A000",
+        "厨具": "#E6539B",
+    }[category]
     section = make_month_heatmap(category)
     stats_section = make_category_stats(category, all_category_stats)
 
     write_page(
         f"{category}打卡热力图",
-        f'<h1>{html.escape(category)}打卡热力图</h1>'
+        f'<h1 style="color:{title_color}">{html.escape(category)}打卡热力图</h1>'
         f'<div class="summary">显示当前月份（{YEAR}年{MONTH}月）；悬停方格可查看当天详情。</div>'
         f'{section}{stats_section}',
         f"{CATEGORY_PATHS[category]}/index.html",
