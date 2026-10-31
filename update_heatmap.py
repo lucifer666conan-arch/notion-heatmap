@@ -581,19 +581,37 @@ COMMON_STYLE = r"""
 body { margin: 0; padding: 18px; background: #f7f8fa; color: #24292f; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
 h1 { font-size: 24px; margin: 0 0 8px; }
 .summary { color: #57606a; margin-bottom: 18px; font-size: 13px; }
+.annual-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 10px;
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.annual-stat {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.annual-separator {
+    color: #8c959f;
+}
+
 .completion-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     margin: 0 0 16px;
-    padding: 16px;
-    background: white;
-    border: 1px solid #d8dee4;
-    border-radius: 10px;
 }
 
 .completion-item {
     min-width: 0;
+    padding: 16px;
+    background: #f6f8fa;
+    border-radius: 12px;
 }
 
 .completion-title {
@@ -746,9 +764,37 @@ for name, source in COMPLETION_SOURCES.items():
         f'</div>'
     )
 completion_html += '</div>'
+
+# 年度统计文字行：只展示年度总次数、打卡天数及五个分类的次数。
+category_colors = {
+    "书籍": "#269D59",
+    "影视": "#8057C8",
+    "游戏": "#2185DF",
+    "做饭": "#D6A000",
+    "厨具": "#E6539B",
+}
+annual_parts = [
+    '<span class="annual-stat" style="color:#F39A00">全年总打卡：'
+    f'{record_count}次</span>',
+    '<span class="annual-stat" style="color:#00A69A">打卡天数：'
+    f'{len(daily)}天</span>',
+]
+for category in CATEGORIES:
+    category_total = sum(day_counts.get(category, 0) for day_counts in daily.values())
+    annual_parts.append(
+        f'<span class="annual-stat" style="color:{category_colors[category]}">'
+        f'{html.escape(category)}：{category_total}次</span>'
+    )
+annual_summary_html = (
+    '<div class="annual-summary">'
+    + '<span class="annual-separator">·</span>'.join(annual_parts)
+    + '</div>'
+)
 write_page(
     f"{YEAR} 年总打卡热力图",
-    f'<h1 style="color:#EA6A24">{YEAR} 年总打卡热力图</h1><div class="summary">年度记录数：{record_count} 条。悬停方格可查看每天各类别的打卡详情。</div>{completion_html}{year_section}',
+    f'<h1 style="color:#EA6A24">{YEAR} 年总打卡热力图</h1>'
+    f'<div class="summary">年度总打卡记录；悬停方格可查看当天各类别详情。</div>'
+    f'{annual_summary_html}{completion_html}{year_section}',
     "index.html",
 )
 
