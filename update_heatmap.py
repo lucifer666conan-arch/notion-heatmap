@@ -528,14 +528,13 @@ def make_year_heatmap():
         f'<span class="legend-cell" style="background:{total_color_for(i)}"></span>'
         for i in range(len(TOTAL_COLORS))
     )
-    return f'''<section class="panel year-panel">
-      <h2 style="color:#EA6A24">{YEAR} 年总打卡 · 全年</h2>
+    return f'''<div class="year-panel-content">
       <div class="scroll year-scroll">
         <div class="month-labels" style="grid-template-columns:repeat({week_count},13px)">{''.join(month_labels)}</div>
         <div class="heatmap year-heatmap" style="grid-template-columns:repeat({week_count},13px)">{''.join(cells)}</div>
       </div>
       <p class="legend">少 ← {legend} → 多</p>
-    </section>'''
+    </div>'''
 
 
 def make_month_heatmap(category):
@@ -795,7 +794,12 @@ write_page(
     f"{YEAR} 年总打卡热力图",
     f'<h1 style="color:#EA6A24">{YEAR} 年总打卡热力图</h1>'
     f'<div class="summary">年度总打卡记录；悬停方格可查看当天各类别详情。</div>'
-    f'{annual_summary_html}{completion_html}{year_section}',
+    f'<section class="panel year-panel">'
+    f'<h2 style="color:#EA6A24">{YEAR} 年总打卡 · 全年</h2>'
+    f'{annual_summary_html}'
+    f'{completion_html}'
+    f'{year_section}'
+    f'</section>',
     "index.html",
 )
 
