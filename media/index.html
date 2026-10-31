@@ -9,19 +9,37 @@
 body { margin: 0; padding: 18px; background: #f7f8fa; color: #24292f; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
 h1 { font-size: 24px; margin: 0 0 8px; }
 .summary { color: #57606a; margin-bottom: 18px; font-size: 13px; }
+.annual-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 10px;
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.annual-stat {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.annual-separator {
+    color: #8c959f;
+}
+
 .completion-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     margin: 0 0 16px;
-    padding: 16px;
-    background: white;
-    border: 1px solid #d8dee4;
-    border-radius: 10px;
 }
 
 .completion-item {
     min-width: 0;
+    padding: 16px;
+    background: #f6f8fa;
+    border-radius: 12px;
 }
 
 .completion-title {
@@ -126,12 +144,12 @@ footer { color: #57606a; font-size: 12px; margin-top: 18px; }
 </style>
 </head>
 <body>
-<h1 style="color:#8057C8">影视打卡热力图</h1><div class="summary">显示当前月份（2026年10月）；悬停方格可查看当天详情。</div><section class="panel month-panel">
-      <h2 style="color:#8057C8">影视 · 2026年10月</h2>
+<h1 style="color:#8057C8">影视打卡热力图</h1><div class="summary">显示当前月份（2026年11月）；悬停方格可查看当天详情。</div><section class="panel month-panel">
+      <h2 style="color:#8057C8">影视 · 2026年11月</h2>
       <div class="weekday-row"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-      <div class="month-grid"><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="month-day" style="background:#EBEDF0" title="2026-10-01｜影视 0 次｜当天总计 0 次"><span class="day-number">1</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-02｜影视 0 次｜当天总计 0 次"><span class="day-number">2</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-03｜影视 0 次｜当天总计 0 次"><span class="day-number">3</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-04｜影视 0 次｜当天总计 0 次"><span class="day-number">4</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-05｜影视 0 次｜当天总计 0 次"><span class="day-number">5</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-06｜影视 0 次｜当天总计 0 次"><span class="day-number">6</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-07｜影视 0 次｜当天总计 0 次"><span class="day-number">7</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-08｜影视 0 次｜当天总计 0 次"><span class="day-number">8</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-09｜影视 0 次｜当天总计 0 次"><span class="day-number">9</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-10｜影视 0 次｜当天总计 0 次"><span class="day-number">10</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-11｜影视 0 次｜当天总计 0 次"><span class="day-number">11</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-12｜影视 0 次｜当天总计 0 次"><span class="day-number">12</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-13｜影视 0 次｜当天总计 0 次"><span class="day-number">13</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-14｜影视 0 次｜当天总计 0 次"><span class="day-number">14</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-15｜影视 0 次｜当天总计 0 次"><span class="day-number">15</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-16｜影视 0 次｜当天总计 0 次"><span class="day-number">16</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-17｜影视 0 次｜当天总计 2 次"><span class="day-number">17</span></span><span class="month-day" style="background:#F0E5FF" title="2026-10-18｜影视 1 次｜当天总计 6 次"><span class="day-number">18</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-19｜影视 0 次｜当天总计 6 次"><span class="day-number">19</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-20｜影视 0 次｜当天总计 5 次"><span class="day-number">20</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-21｜影视 0 次｜当天总计 3 次"><span class="day-number">21</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-22｜影视 0 次｜当天总计 5 次"><span class="day-number">22</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-23｜影视 0 次｜当天总计 1 次"><span class="day-number">23</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-24｜影视 0 次｜当天总计 8 次"><span class="day-number">24</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-25｜影视 0 次｜当天总计 5 次"><span class="day-number">25</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-26｜影视 0 次｜当天总计 9 次"><span class="day-number">26</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-27｜影视 0 次｜当天总计 6 次"><span class="day-number">27</span></span><span class="month-day" style="background:#F0E5FF" title="2026-10-28｜影视 1 次｜当天总计 4 次"><span class="day-number">28</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-29｜影视 0 次｜当天总计 5 次"><span class="day-number">29</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-30｜影视 0 次｜当天总计 6 次"><span class="day-number">30</span></span><span class="month-day" style="background:#EBEDF0" title="2026-10-31｜影视 0 次｜当天总计 4 次"><span class="day-number">31</span></span><span class="cell outside"></span></div>
-      <p class="month-summary">本月打卡：2 次</p>
-    </section><section class="panel category-stats"><h2 style="color:#7038C8">📺 观影统计</h2><div class="stat-row"><div class="stat-label" style="color:#7038C8">至今观看🎞️</div><div class="stat-values"><div class="stat-main" style="color:#7038C8">35分钟 · 2天 · 2次</div><div class="stat-sub" style="color:#A58ADE">0小时35分钟 · 35分钟</div></div></div><div class="stat-row"><div class="stat-label" style="color:#8559D0">2026年观看🎞️</div><div class="stat-values"><div class="stat-main" style="color:#8559D0">35分钟 · 2天 · 2次</div><div class="stat-sub" style="color:#B39BE3">0小时35分钟 · 35分钟</div></div></div><div class="stat-row"><div class="stat-label" style="color:#9B7BDD">10月观看🎞️</div><div class="stat-values"><div class="stat-main" style="color:#9B7BDD">35分钟 · 2天 · 2次</div><div class="stat-sub" style="color:#C1AFE8">0小时35分钟 · 35分钟</div></div></div></section>
+      <div class="month-grid"><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="month-day" style="background:#EBEDF0" title="2026-11-01｜影视 0 次｜当天总计 0 次"><span class="day-number">1</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-02｜影视 0 次｜当天总计 0 次"><span class="day-number">2</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-03｜影视 0 次｜当天总计 0 次"><span class="day-number">3</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-04｜影视 0 次｜当天总计 0 次"><span class="day-number">4</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-05｜影视 0 次｜当天总计 0 次"><span class="day-number">5</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-06｜影视 0 次｜当天总计 0 次"><span class="day-number">6</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-07｜影视 0 次｜当天总计 0 次"><span class="day-number">7</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-08｜影视 0 次｜当天总计 0 次"><span class="day-number">8</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-09｜影视 0 次｜当天总计 0 次"><span class="day-number">9</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-10｜影视 0 次｜当天总计 0 次"><span class="day-number">10</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-11｜影视 0 次｜当天总计 0 次"><span class="day-number">11</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-12｜影视 0 次｜当天总计 0 次"><span class="day-number">12</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-13｜影视 0 次｜当天总计 0 次"><span class="day-number">13</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-14｜影视 0 次｜当天总计 0 次"><span class="day-number">14</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-15｜影视 0 次｜当天总计 0 次"><span class="day-number">15</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-16｜影视 0 次｜当天总计 0 次"><span class="day-number">16</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-17｜影视 0 次｜当天总计 0 次"><span class="day-number">17</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-18｜影视 0 次｜当天总计 0 次"><span class="day-number">18</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-19｜影视 0 次｜当天总计 0 次"><span class="day-number">19</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-20｜影视 0 次｜当天总计 0 次"><span class="day-number">20</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-21｜影视 0 次｜当天总计 0 次"><span class="day-number">21</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-22｜影视 0 次｜当天总计 0 次"><span class="day-number">22</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-23｜影视 0 次｜当天总计 0 次"><span class="day-number">23</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-24｜影视 0 次｜当天总计 0 次"><span class="day-number">24</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-25｜影视 0 次｜当天总计 0 次"><span class="day-number">25</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-26｜影视 0 次｜当天总计 0 次"><span class="day-number">26</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-27｜影视 0 次｜当天总计 0 次"><span class="day-number">27</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-28｜影视 0 次｜当天总计 0 次"><span class="day-number">28</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-29｜影视 0 次｜当天总计 0 次"><span class="day-number">29</span></span><span class="month-day" style="background:#EBEDF0" title="2026-11-30｜影视 0 次｜当天总计 0 次"><span class="day-number">30</span></span><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span><span class="cell outside"></span></div>
+      <p class="month-summary">本月打卡：0 次</p>
+    </section><section class="panel category-stats"><h2 style="color:#7038C8">📺 观影统计</h2><div class="stat-row"><div class="stat-label" style="color:#7038C8">至今观看🎞️</div><div class="stat-values"><div class="stat-main" style="color:#7038C8">35分钟 · 2天 · 2次</div><div class="stat-sub" style="color:#A58ADE">0小时35分钟 · 35分钟</div></div></div><div class="stat-row"><div class="stat-label" style="color:#8559D0">2026年观看🎞️</div><div class="stat-values"><div class="stat-main" style="color:#8559D0">35分钟 · 2天 · 2次</div><div class="stat-sub" style="color:#B39BE3">0小时35分钟 · 35分钟</div></div></div><div class="stat-row"><div class="stat-label" style="color:#9B7BDD">11月观看🎞️</div><div class="stat-values"><div class="stat-main" style="color:#9B7BDD">0分钟 · 0天 · 0次</div><div class="stat-sub" style="color:#C1AFE8">0小时0分钟 · 0分钟</div></div></div></section>
 <footer>由 Notion 打卡数据生成 · 页面每日自动更新</footer>
 </body>
 </html>

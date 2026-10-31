@@ -9,19 +9,37 @@
 body { margin: 0; padding: 18px; background: #f7f8fa; color: #24292f; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
 h1 { font-size: 24px; margin: 0 0 8px; }
 .summary { color: #57606a; margin-bottom: 18px; font-size: 13px; }
+.annual-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 10px;
+    margin: 0 0 16px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.annual-stat {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.annual-separator {
+    color: #8c959f;
+}
+
 .completion-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
     margin: 0 0 16px;
-    padding: 16px;
-    background: white;
-    border: 1px solid #d8dee4;
-    border-radius: 10px;
 }
 
 .completion-item {
     min-width: 0;
+    padding: 16px;
+    background: #f6f8fa;
+    border-radius: 12px;
 }
 
 .completion-title {
@@ -126,7 +144,7 @@ footer { color: #57606a; font-size: 12px; margin-top: 18px; }
 </style>
 </head>
 <body>
-<h1 style="color:#EA6A24">2026 年总打卡热力图</h1><div class="summary">年度记录数：75 条。悬停方格可查看每天各类别的打卡详情。</div><div class="completion-stats"><div class="completion-item"><div class="completion-title" style="color:#268A48">📚 阅读完成</div><div class="completion-total" style="color:#268A48">5本</div><div class="completion-year" style="color:#65B77E">2026 · 5本</div></div><div class="completion-item"><div class="completion-title" style="color:#7038C8">🎬 观看完毕</div><div class="completion-total" style="color:#7038C8">6部</div><div class="completion-year" style="color:#A58ADE">2026 · 6部</div></div><div class="completion-item"><div class="completion-title" style="color:#2169BF">🎮 游戏通关</div><div class="completion-total" style="color:#2169BF">1个</div><div class="completion-year" style="color:#72A5DE">2026 · 1个</div></div></div><section class="panel year-panel">
+<h1 style="color:#EA6A24">2026 年总打卡热力图</h1><div class="summary">年度总打卡记录；悬停方格可查看当天各类别详情。</div><div class="annual-summary"><span class="annual-stat" style="color:#F39A00">全年总打卡：75次</span><span class="annual-separator">·</span><span class="annual-stat" style="color:#00A69A">打卡天数：15天</span><span class="annual-separator">·</span><span class="annual-stat" style="color:#269D59">书籍：2次</span><span class="annual-separator">·</span><span class="annual-stat" style="color:#8057C8">影视：2次</span><span class="annual-separator">·</span><span class="annual-stat" style="color:#2185DF">游戏：30次</span><span class="annual-separator">·</span><span class="annual-stat" style="color:#D6A000">做饭：9次</span><span class="annual-separator">·</span><span class="annual-stat" style="color:#E6539B">厨具：32次</span></div><div class="completion-stats"><div class="completion-item"><div class="completion-title" style="color:#268A48">📚 阅读完成</div><div class="completion-total" style="color:#268A48">5本</div><div class="completion-year" style="color:#65B77E">2026 · 5本</div></div><div class="completion-item"><div class="completion-title" style="color:#7038C8">🎬 观看完毕</div><div class="completion-total" style="color:#7038C8">6部</div><div class="completion-year" style="color:#A58ADE">2026 · 6部</div></div><div class="completion-item"><div class="completion-title" style="color:#2169BF">🎮 游戏通关</div><div class="completion-total" style="color:#2169BF">1个</div><div class="completion-year" style="color:#72A5DE">2026 · 1个</div></div></div><section class="panel year-panel">
       <h2 style="color:#EA6A24">2026 年总打卡 · 全年</h2>
       <div class="scroll year-scroll">
         <div class="month-labels" style="grid-template-columns:repeat(53,13px)"><span style="grid-column:1">1月</span><span style="grid-column:6">2月</span><span style="grid-column:10">3月</span><span style="grid-column:14">4月</span><span style="grid-column:18">5月</span><span style="grid-column:23">6月</span><span style="grid-column:27">7月</span><span style="grid-column:31">8月</span><span style="grid-column:36">9月</span><span style="grid-column:40">10月</span><span style="grid-column:45">11月</span><span style="grid-column:49">12月</span></div>
